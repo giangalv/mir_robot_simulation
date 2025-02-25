@@ -13,7 +13,7 @@ def generate_launch_description():
 
     mir_description_dir = get_package_share_directory('mir_description')
     use_sim_time = LaunchConfiguration('use_sim_time')
-    scan_merger_dir = get_package_share_directory('laser_scan_merger')
+    scan_merger_dir = get_package_share_directory('dual_laser_merger')
 
     return LaunchDescription([
 
@@ -32,10 +32,10 @@ def generate_launch_description():
             default_value='130.251.13.90',
             description=''),
 
-        # DeclareLaunchArgument(
-        #     'disable_map',
-        #     default_value='false',
-        #     description='Disable the map topic and map -> odom_comb TF transform from the MiR'),
+        DeclareLaunchArgument(
+             'disable_map',
+             default_value='false',
+             description='Disable the map topic and map -> odom_comb TF transform from the MiR'),
 
         DeclareLaunchArgument(
             'robot_state_publisher_enabled',
@@ -82,11 +82,13 @@ def generate_launch_description():
             ],
             namespace=LaunchConfiguration('namespace'),
         ),
-
+  
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                os.path.join(
-                    scan_merger_dir, 'launch', 'laser_scan_merger_launch.py')),
-        ),           
-
+                os.path.join(scan_merger_dir, 'launch', 'demo_laser_merger.launch.py')),
+            launch_arguments={
+                'namespace': LaunchConfiguration('namespace'),
+                'use_sim_time': LaunchConfiguration('use_sim_time')
+            }.items()
+        )
     ])

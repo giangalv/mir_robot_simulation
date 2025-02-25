@@ -86,6 +86,63 @@ ros2 launch mir_navigation navigation.py use_sim_time:=false
 ### combined launch file:
 ros2 launch mir_navigation mir_nav_launch.py map:={path to /name of existing map}
 ```
-
+# Dual Laser Merger
 ## Acknowledgement
 The 3d files for MiR 250 are from [DFKI](https://github.com/DFKI-NI/mir_robot).
+
+## Example Demo using recorded bag file
+This demo shows merging of laser scan data from 2 lidars.
+```
+ros2 launch dual_laser_merger demo_laser_merger.launch.py
+```
+
+## Requirements
+1. Lidar 1 scan topic, the messages in the topic are required to have `frame_id`.
+   ```
+   ~$ ros2 topic info /lidar1/scan
+      Type: sensor_msgs/msg/LaserScan
+   ```
+2. Lidar 2 scan topic, the messages in the topic are required to have `frame_id`.
+   ```
+   ~$ ros2 topic info /lidar2/scan
+      Type: sensor_msgs/msg/LaserScan
+   ```
+3. TF from Lidar 1 (`laser_1`) and Lidar 2 (`laser_2`) to Target frame (`lsc_mount`)
+  ```
+  ~$ ros2 topic echo /tf_static 
+  transforms:
+    - header:
+        stamp:
+          sec: 1729076136
+          nanosec: 564956753
+        frame_id: lsc_mount
+      child_frame_id: laser_1
+      transform:
+        translation:
+          x: 0.321967
+          y: 0.221817
+          z: 0.0
+        rotation:
+          x: 0.3826834321814926
+          y: 0.9238795325873352
+          z: 3.9573888241688663e-14
+          w: -9.553981776262265e-14
+  
+  transforms:
+    - header:
+        stamp:
+          sec: 1729076136
+          nanosec: 580013258
+        frame_id: lsc_mount
+      child_frame_id: laser_2
+      transform:
+        translation:
+          x: -0.321967
+          y: -0.221817
+          z: 0.0
+        rotation:
+          x: -0.9238795324744832
+          y: 0.38268343245394154
+          z: -9.553981775095244e-14
+          w: -3.957388826986303e-14
+  ```

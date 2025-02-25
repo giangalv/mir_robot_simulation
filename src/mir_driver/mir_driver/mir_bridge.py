@@ -12,7 +12,18 @@ import mir_driver.rosbridge
 from rclpy_message_converter import message_converter
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
+
+import actionlib_msgs.msg
+import diagnostic_msgs.msg
+import geometry_msgs.msg
+import mir_msgs.msg
+import nav_msgs.msg
+import sdc21x0.msg
 import sensor_msgs.msg
+import tf2_msgs.msg
+import visualization_msgs.msg
+import std_msgs 
+
 from sensor_msgs.msg import LaserScan
 from tf2_msgs.msg import TFMessage
 from std_srvs.srv import Trigger
@@ -172,7 +183,7 @@ PUB_TOPICS = [
     # TopicConfig('SickPLC/parameter_updates', dynamic_reconfigure.msg.Config),
     # TopicConfig('active_mapping_guid', std_msgs.msg.String),
     # TopicConfig('amcl_pose', geometry_msgs.msg.PoseWithCovarianceStamped),
-    # TopicConfig('b_raw_scan', sensor_msgs.msg.LaserScan),
+    # TopicConfig('b_raw_scan', LaserScan, dict_filter=_laser_scan_filter, qos_profile=qos_profile_sensor_data),
     TopicConfig('b_scan', LaserScan, dict_filter=_laser_scan_filter,
                  qos_profile=qos_profile_sensor_data),
     # TopicConfig('camera_floor/background', sensor_msgs.msg.PointCloud2),
@@ -193,7 +204,7 @@ PUB_TOPICS = [
     # TopicConfig('diagnostics', diagnostic_msgs.msg.DiagnosticArray),
     # TopicConfig('diagnostics_agg', diagnostic_msgs.msg.DiagnosticArray),
     # TopicConfig('diagnostics_toplevel_state', diagnostic_msgs.msg.DiagnosticStatus),
-    # TopicConfig('f_raw_scan', sensor_msgs.msg.LaserScan),
+    #TopicConfig('f_raw_scan', sensor_msgs.msg.LaserScan),
     TopicConfig('f_scan', LaserScan, dict_filter=_laser_scan_filter,
                 qos_profile=qos_profile_sensor_data),
     # TopicConfig('imu_data', sensor_msgs.msg.Imu),
