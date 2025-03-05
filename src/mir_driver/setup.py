@@ -12,6 +12,7 @@ setup(
       ['resource/' + package_name]),
      ('share/' + package_name, ['package.xml']),
      (os.path.join('share', package_name, 'launch'), glob('launch/*launch.py')),
+     (os.path.join('share', package_name, 'config'), glob('config/*config.yaml')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -23,7 +24,6 @@ setup(
     entry_points={
         'console_scripts': [
             'mir_bridge = mir_driver.mir_bridge:main',
-            'fake_mir_joint_publisher = mir_driver.fake_mir_joint_publisher:main',
             'time_synchronizer = mir_driver.time_synchronizer:main',
             'tf_remove_child_frames = mir_driver.tf_remove_child_frames:main'
         ],

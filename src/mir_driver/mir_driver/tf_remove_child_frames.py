@@ -1,29 +1,19 @@
-# #!/usr/bin/env python3
-# # -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
-# # Copyright 2016 The Cartographer Authors
-# # Copyright 2018 DFKI GmbH
-# #
-# # Licensed under the Apache License, Version 2.0 (the "License");
-# # you may not use this file except in compliance with the License.
-# # You may obtain a copy of the License at
-# #
-# #    http://www.apache.org/licenses/LICENSE-2.0
-# #
-# # Unless required by applicable law or agreed to in writing, software
-# # distributed under the License is distributed on an "AS IS" BASIS,
-# # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# # See the License for the specific language governing permissions and
-# # limitations under the License.
+## @package tf_remove_child_frames
+#  This module provides a ROS2 node to remove specified child frames from TF messages.
 
 import rclpy
 from rclpy.node import Node
 from tf2_msgs.msg import TFMessage
 from rclpy.qos import QoSProfile, qos_profile_system_default
 
-
+## @class remove_child_frames_node
+#  @brief A ROS2 node to filter out specified child frames from TF and TF static messages.
 class remove_child_frames_node(Node):
 
+    ## Constructor
+    #  Initializes the node and sets up publishers and subscriptions.
     def __init__(self):
         super().__init__('tf_remove_child_frames')
         remove_frames = self.declare_parameter('remove_frames', []).value
@@ -33,6 +23,9 @@ class remove_child_frames_node(Node):
             qos_profile=QoSProfile(depth=1)
         )
 
+        ## Callback function for TF messages.
+        #  Filters out transforms with child frames specified in the remove_frames parameter.
+        #  @param msg The incoming TFMessage.
         def tf_cb(msg):
             msg.transforms = [t for t in msg.transforms
                               if t.child_frame_id.lstrip('/') not in remove_frames]
@@ -53,6 +46,9 @@ class remove_child_frames_node(Node):
             # latch
         )
 
+        ## Callback function for TF static messages.
+        #  Filters out static transforms with child frames specified in the remove_frames parameter.
+        #  @param msg The incoming TFMessage.
         def tf_static_cb(msg):
             msg.transforms = [t for t in msg.transforms
                               if t.child_frame_id.lstrip('/') not in remove_frames]
@@ -66,7 +62,8 @@ class remove_child_frames_node(Node):
             qos_profile=qos_profile_system_default
         )
 
-
+## Main function to initialize and run the node.
+#  @param args Command line arguments (optional).
 def main(args=None):
     rclpy.init(args=args)
     node = remove_child_frames_node()

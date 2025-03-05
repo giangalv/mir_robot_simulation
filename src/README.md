@@ -1,11 +1,12 @@
 # mir_250_ros2
-This is a ROS2 package for MiR 250 with ros2_control, Gazebo and Ignition Gazebo simulation.
+This is a ROS2 package for MiR 250 and UR5e series.
 
 # Installation
 
 ## Preliminaries
 ## ROS2
 If you haven't already installed [ROS2](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html) on your PC, you need to add the ROS2 apt repository.
+
 
 ## Source install
 
@@ -15,7 +16,7 @@ mkdir -p ~/ros2_ws/src
 cd ~/ros2_ws/
 
 # clone mir_robot into the ros2 workspace
-git clone # ADD the link from the repo src/mir_robot_simulation
+git clone https://github.com/giangalv/mir_robot_simulation.git
 
 # use vcs to fetch linked repos
 # $ sudo apt install python3-vcstool
@@ -24,6 +25,10 @@ vcs import < src/mir_robot/ros2.repos src --recursive
 # use rosdep to install all dependencies (including ROS itself)
 sudo apt update
 sudo apt install -y python3-rosdep
+
+sudo apt install ros-humble-foxglove-bridge
+sudo apt install ros-humble-librealsense2*
+
 rosdep update --rosdistro=humble
 rosdep install --from-paths src --ignore-src -r -y --rosdistro humble
 
@@ -37,6 +42,59 @@ You must source the workspace in each terminal you want to work in:
 ```
 source ~/ros2_ws/install/setup.bash
 ```
+
+#### Fix time synchronization manually
+
+* In the Mir dashboard (mir.com in the Mir-Wifi), go to "Service" ->
+  "Configuration" -> "System settings" -> "Time settings" -> "Set device time
+  on robot"
+
+Use **load from device** to sync with the system time!
+
+#### Test the connection is working
+
+This tests the connection if returning the result from the MIR the 'MIR_IP_ADDR' and
+  'MIR_API_KEY' are correct.
+
+```bash
+  curl -X GET "http://130.251.13.90/api/v2.0.0/status" -H "Authorization: Basic ZGlzdHJpYnV0b3I6NjJmMmYwZjFlZmYxMGQzMTUyYzk1ZjZmMDU5NjU3NmU0ODJiYjhlNDQ4MDY0MzNmNGNmOTI5NzkyODM0YjAxNA=="
+```
+
+#### **Fix time synchronization using ROS2:**
+
+From the package `mir_restapi` a node called `mir_restapi_server` can be run,
+which can execute a time sync REST API call from the driver's host machine to
+the Mir's host.
+
+* Launch the node with the API key and mir hostname's IP address
+
+    ```bash
+    ros2 run mir_restapi mir_restapi_server --ros-args -p mir_hostname:='MIR_IP_ADDR' -p mir_restapi_auth:='YOUR_API_KEY' #distributor
+    ```
+
+    MIR_IP_ADDR: 130.251.13.90 
+    YOUR_API_KEY: Basic ZGlzdHJpYnV0b3I6NjJmMmYwZjFlZmYxMGQzMTUyYzk1ZjZmMDU5NjU3NmU0ODJiYjhlNDQ4MDY0MzNmNGNmOTI5NzkyODM0YjAxNA==
+    ```
+
+* Call the time sync service from terminal by invoking
+
+    ```bash
+    ros2 service call /mir_sync_time std_srvs/Trigger
+    ```
+
+#### **After time sync**
+
+Keep in mind, that the time sync causes the mir_bridge to freeze. Therefore online time syncs are not recommended.
+
+
+# RVIZ demo test
+
+```bash
+### rviz:
+ros2 launch mir_description mir_display_launch.py
+```
+This should work and you are going to see the robot spawned inside the RVIZ2
+
 
 # Gazebo demo (mapping)
 

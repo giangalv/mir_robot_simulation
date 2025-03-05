@@ -1,18 +1,35 @@
 #!/usr/bin/env python3
+## @class TopicConfig
+#  @brief Configuration for a ROS2 topic.
+#
+#  This class holds the configuration for a ROS2 topic, including its name,
+#  type, and any filters or quality of service profiles that should be applied.
+
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import qos_profile_system_default, qos_profile_sensor_data
+from rclpy.qos import (
+    qos_profile_system_default,
+    qos_profile_sensor_data,
+    QoSProfile,
+    QoSDurabilityPolicy,
+    QoSReliabilityPolicy,
+    QoSHistoryPolicy
+)
 
 import time
 import copy
 import sys
 from collections.abc import Iterable
 
-import mir_driver.rosbridge
 from rclpy_message_converter import message_converter
+
 from geometry_msgs.msg import TwistStamped
 from nav_msgs.msg import Odometry
+from sensor_msgs.msg import LaserScan
+from tf2_msgs.msg import TFMessage
+from std_srvs.srv import Trigger
 
+import mir_driver.rosbridge
 import actionlib_msgs.msg
 import diagnostic_msgs.msg
 import geometry_msgs.msg
@@ -24,15 +41,37 @@ import tf2_msgs.msg
 import visualization_msgs.msg
 import std_msgs 
 
-from sensor_msgs.msg import LaserScan
-from tf2_msgs.msg import TFMessage
-from std_srvs.srv import Trigger
-
 
 tf_prefix = ''
 
+qos_profile_latching = QoSProfile(
+    depth=1,
+    durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+    reliability=QoSReliabilityPolicy.RELIABLE,
+)
 
+qos_profile_scan = QoSProfile(
+    history=QoSHistoryPolicy.KEEP_LAST,
+    depth=10,
+    reliability=QoSReliabilityPolicy.BEST_EFFORT
+)
+
+class TimeFilter():
+    def __init__(self):
+        self.prev_time = 0
+    def test_time(self, time):
+        result = time < self.prev_time
+        self.prev_time = time 
+        return result
+    
 class TopicConfig(object):
+    ## @brief Constructor for TopicConfig.
+    #  @param topic The name of the topic.
+    #  @param topic_type The type of the topic.
+    #  @param topic_renamed Optional renamed topic for ROS2.
+    #  @param latch Whether the topic should be latched.
+    #  @param dict_filter Optional filter function for the topic's dictionary.
+    #  @param qos_profile Optional quality of service profile for the topic.
     def __init__(self, topic, topic_type, topic_renamed=None, latch=False, dict_filter=None,
                  qos_profile=None):
         self.topic = topic
@@ -49,6 +88,19 @@ class TopicConfig(object):
             self.qos_profile = qos_profile_system_default
 
 
+## @brief Filter function, standard constructor for header dictionaries.
+#  @param msg_dict The message dictionary to filter.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The filtered message dictionary.
+def _header_dict_filter(msg_dict, to_ros2):
+    filtered_msg_dict = copy.deepcopy(msg_dict)
+    filtered_msg_dict['header'] = _convert_ros_header(filtered_msg_dict['header'], to_ros2)
+    return filtered_msg_dict
+
+## @brief Filter function for odometry messages.
+#  @param msg_dict The message dictionary to filter.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The filtered message dictionary.
 def _odom_dict_filter(msg_dict,  to_ros2):
     filtered_msg_dict = copy.deepcopy(msg_dict)
     filtered_msg_dict['header'] = _convert_ros_header(filtered_msg_dict['header'], to_ros2)
@@ -56,7 +108,10 @@ def _odom_dict_filter(msg_dict,  to_ros2):
         filtered_msg_dict['child_frame_id'].strip('/')
     return filtered_msg_dict
 
-
+## @brief Filter function for transform messages.
+#  @param msg_dict The message dictionary to filter.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The filtered message dictionary.
 def _tf_dict_filter(msg_dict, to_ros2):
     filtered_msg_dict = copy.deepcopy(msg_dict)
 
@@ -65,18 +120,53 @@ def _tf_dict_filter(msg_dict, to_ros2):
         transform['header'] = _convert_ros_header(transform['header'], to_ros2)
     return filtered_msg_dict
 
-
+## @brief Filter function for laser scan messages.
+#  @param msg_dict The message dictionary to filter.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The filtered message dictionary.
 def _laser_scan_filter(msg_dict, to_ros2):
     filtered_msg_dict = copy.deepcopy(msg_dict)
-    filtered_msg_dict['header'] = _convert_ros_header(
-        filtered_msg_dict['header'], to_ros2)
+    filtered_msg_dict['header'] = _convert_ros_header(filtered_msg_dict['header'], to_ros2)
     
     # Change the frame ID to "laser"
     #filtered_msg_dict['header']['frame_id'] = 'laser'
     
     return filtered_msg_dict
 
+## @brief Filter function for robot mode messages
+#  @param msg_dict The message dictionary to filter.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The filtered message dictionary.
+def _robot_mode_dict_filter(msg_dict, to_ros2):
+    filtered_msg_dict = copy.deepcopy(msg_dict)
+    filtered_msg_dict['robot_mode'] = filtered_msg_dict.pop('robotMode')
+    filtered_msg_dict['robot_mode_string'] = filtered_msg_dict.pop('robotModeString')
+    return filtered_msg_dict
 
+## @brief Filter function for robot state messages.
+#  @param msg_dict The message dictionary to filter.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The filtered message dictionary.
+def _robot_state_dict_filter(msg_dict, to_ros2):
+    filtered_msg_dict = copy.deepcopy(msg_dict)
+    filtered_msg_dict['robot_state'] = filtered_msg_dict.pop('robotState')
+    filtered_msg_dict['robot_state_string'] = filtered_msg_dict.pop('robotStateString')
+    return filtered_msg_dict
+
+## @brief Filter function for marker dictionaries.
+#  @param msg_dict The message dictionary to filter.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The filtered message dictionary.
+def _marker_dict_filter(msg_dict, to_ros2):
+    filtered_msg_dict = copy.deepcopy(msg_dict)
+    filtered_msg_dict['header'] = _convert_ros_header(filtered_msg_dict['header'], to_ros2)
+    filtered_msg_dict['lifetime'] = _convert_ros_time(filtered_msg_dict['lifetime'], to_ros2)
+    return filtered_msg_dict
+
+## @brief Filter function for map messages.
+#  @param msg_dict The message dictionary to filter.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The filtered message dictionary.
 def _map_dict_filter(msg_dict, to_ros2):
     filtered_msg_dict = copy.deepcopy(msg_dict)
     filtered_msg_dict['header'] = _convert_ros_header(
@@ -86,21 +176,71 @@ def _map_dict_filter(msg_dict, to_ros2):
     print('called dict filter')
     return filtered_msg_dict
 
+## @brief Filter function for occupancy grid messages.
+#  @param msg_dict The message dictionary to filter.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The filtered message dictionary.
+def _occupancy_grid_dict_filter(msg_dict, to_ros2):
+    filtered_msg_dict = copy.deepcopy(msg_dict)
+    filtered_msg_dict['header'] = _convert_ros_header(filtered_msg_dict['header'], to_ros2)
+    filtered_msg_dict['info'] = _map_meta_data_dict_filter(filtered_msg_dict['info'], to_ros2)
+    return filtered_msg_dict
 
-def _convert_ros_time(time_msg_dict, to_ros2):
-    time_dict = copy.deepcopy(time_msg_dict)
-    if to_ros2:
-        # Conversion from MiR (ros1) to sys (ros2)
-        time_dict['nanosec'] = time_dict.pop('nsecs')
-        time_dict['sec'] = time_dict.pop('secs')
-    else:
-        # Conversion from sys (ros2) to MiR (ros1)
-        time_dict['nsecs'] = time_dict.pop('nanosec')
-        time_dict['secs'] = time_dict.pop('sec')
+## @brief Filter function for map metadata messages.
+#  @param msg_dict The message dictionary to filter.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The filtered message dictionary.
+def _map_meta_data_dict_filter(msg_dict, to_ros2):
+    filtered_msg_dict = copy.deepcopy(msg_dict)
+    filtered_msg_dict['map_load_time'] = _convert_ros_time(filtered_msg_dict['map_load_time'], to_ros2)
+    return filtered_msg_dict
 
-    return time_dict
+## @brief Filter function for goal status array messages.
+#  @param msg_dict The message dictionary to filter.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The filtered message dictionary.
+def _goal_status_array_dict_filter(msg_dict, to_ros2):
+    filtered_msg_dict = copy.deepcopy(msg_dict)
+    filtered_msg_dict['header'] = _convert_ros_header(filtered_msg_dict['header'], to_ros2)
+    filtered_msg_dict['status_list'] = [
+        _goal_status_dict_filter(status, to_ros2) for status in filtered_msg_dict['status_list']
+    ]
+    return filtered_msg_dict
 
+## @brief Filter function for individual goal status messages.
+#  @param msg_dict The message dictionary to filter.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The filtered message dictionary.
+def _goal_status_dict_filter(msg_dict, to_ros2):
+    filtered_msg_dict = copy.deepcopy(msg_dict)
+    filtered_msg_dict['goal_id']['stamp'] = _convert_ros_time(filtered_msg_dict['goal_id']['stamp'], to_ros2)
+    return filtered_msg_dict
 
+## @brief Filter function for diagnostic array messages.
+#  @param msg_dict The message dictionary to filter.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The filtered message dictionary.
+def _diagnostic_array_dict_filter(msg_dict, to_ros2):
+    filtered_msg_dict = copy.deepcopy(msg_dict)
+    filtered_msg_dict['header'] = _convert_ros_header(filtered_msg_dict['header'], to_ros2)
+    filtered_msg_dict['status'] = [
+        _diagnostic_status_dict_filter(status, to_ros2) for status in filtered_msg_dict['status']
+    ]
+    return filtered_msg_dict
+
+## @brief Filter function for individual diagnostic status messages.
+#  @param msg_dict The message dictionary to filter.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The filtered message dictionary.
+def _diagnostic_status_dict_filter(msg_dict, to_ros2):
+    filtered_msg_dict = copy.deepcopy(msg_dict)
+    filtered_msg_dict['level'] = bytes([filtered_msg_dict['level'] % 256])
+    return filtered_msg_dict
+
+## @brief Convert ROS header between ROS1 and ROS2 formats.
+#  @param header_msg_dict The header message dictionary to convert.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The converted header dictionary.
 def _convert_ros_header(header_msg_dict, to_ros2):
     header_dict = copy.deepcopy(header_msg_dict)
     header_dict['stamp'] = _convert_ros_time(header_dict['stamp'], to_ros2)
@@ -114,7 +254,28 @@ def _convert_ros_header(header_msg_dict, to_ros2):
 
     return header_dict
 
+## @brief Convert ROS time between ROS1 and ROS2 formats.
+#  @param time_msg_dict The time message dictionary to convert.
+#  @param to_ros2 Boolean indicating the direction of conversion.
+#  @return The converted time dictionary.
+def _convert_ros_time(time_msg_dict, to_ros2):
+    time_dict = copy.deepcopy(time_msg_dict)
+    if to_ros2:
+        # Conversion from MiR (ros1) to sys (ros2)
+        time_dict['nanosec'] = time_dict.pop('nsecs')
+        time_dict['sec'] = time_dict.pop('secs')
+    else:
+        # Conversion from sys (ros2) to MiR (ros1)
+        time_dict['nsecs'] = time_dict.pop('nanosec')
+        time_dict['secs'] = time_dict.pop('sec')
 
+    return time_dict
+
+####################################################################
+
+## @brief Prepend tf_prefix to frame_id in a message dictionary.
+#  @param msg_dict The message dictionary to modify.
+#  @return The modified message dictionary.
 def _prepend_tf_prefix_dict_filter(msg_dict):
     # filtered_msg_dict = copy.deepcopy(msg_dict)
     if not isinstance(msg_dict, dict):   # can happen during recursion
@@ -141,7 +302,9 @@ def _prepend_tf_prefix_dict_filter(msg_dict):
                 _prepend_tf_prefix_dict_filter(item)
     return msg_dict
 
-
+## @brief Remove tf_prefix from frame_id in a message dictionary.
+#  @param msg_dict The message dictionary to modify.
+#  @return The modified message dictionary.
 def _remove_tf_prefix_dict_filter(msg_dict):
     # filtered_msg_dict = copy.deepcopy(msg_dict)
     if not isinstance(msg_dict, dict):   # can happen during recursion
@@ -166,11 +329,16 @@ def _remove_tf_prefix_dict_filter(msg_dict):
     return msg_dict
 
 
-# topics we want to publish to ROS (and subscribe to from the MiR)
+## @var PUB_TOPICS and SUB_TOPICS
+#  @brief List of topics to publish to ROS2 and subscribe from the MiR.
+#
+#  This list contains configurations for topics that are published to ROS2
+#  and subscribed from the MiR, including optional filters and quality of
+#  service profiles.
 PUB_TOPICS = [
     # TopicConfig('LightCtrl/bms_data', mir_msgs.msg.BMSData),
     # TopicConfig('LightCtrl/charging_state', mir_msgs.msg.ChargingState),
-    # TopicConfig('LightCtrl/us_list', sensor_msgs.msg.Range),
+    #TopicConfig('LightCtrl/us_list', sensor_msgs.msg.Range, dict_filter=_header_dict_filter), # NOT WORKING
     # TopicConfig('MC/battery_currents', mir_msgs.msg.BatteryCurrents),
     # TopicConfig('MC/battery_voltage', std_msgs.msg.Float64),
     # TopicConfig('MC/currents', sdc21x0.msg.MotorCurrents),
@@ -183,17 +351,35 @@ PUB_TOPICS = [
     # TopicConfig('SickPLC/parameter_updates', dynamic_reconfigure.msg.Config),
     # TopicConfig('active_mapping_guid', std_msgs.msg.String),
     # TopicConfig('amcl_pose', geometry_msgs.msg.PoseWithCovarianceStamped),
-    # TopicConfig('b_raw_scan', LaserScan, dict_filter=_laser_scan_filter, qos_profile=qos_profile_sensor_data),
-    TopicConfig('b_scan', LaserScan, dict_filter=_laser_scan_filter,
-                 qos_profile=qos_profile_sensor_data),
-    # TopicConfig('camera_floor/background', sensor_msgs.msg.PointCloud2),
-    # TopicConfig('camera_floor/depth/parameter_descriptions',
-    #   dynamic_reconfigure.msg.ConfigDescription),
-    # TopicConfig('camera_floor/depth/parameter_updates', dynamic_reconfigure.msg.Config),
-    # TopicConfig('camera_floor/depth/points', sensor_msgs.msg.PointCloud2),
-    # TopicConfig('camera_floor/filter/visualization_marker', visualization_msgs.msg.Marker),
-    # TopicConfig('camera_floor/floor', sensor_msgs.msg.PointCloud2),
-    # TopicConfig('camera_floor/obstacles', sensor_msgs.msg.PointCloud2),
+    # TopicConfig(
+    #    'b_raw_scan', sensor_msgs.msg.LaserScan, dict_filter=_header_dict_filter,
+    #      qos_profile=qos_profile_sensor_data
+    # ),
+
+    TopicConfig('b_scan', LaserScan, dict_filter=_laser_scan_filter),
+    
+    #TopicConfig('camera_floor_left/driver/depth/color/points', sensor_msgs.msg.PointCloud2, 
+    #        dict_filter=_header_dict_filter, 
+    #        qos_profile=qos_profile_sensor_data
+    #), # WORKING
+
+    #TopicConfig('camera_floor_right/driver/depth/color/points', sensor_msgs.msg.PointCloud2, 
+    #        dict_filter=_header_dict_filter, 
+    #        qos_profile=qos_profile_sensor_data
+    #), # WORKING
+
+    #TopicConfig('camera_floor_left/obstacles', sensor_msgs.msg.PointCloud2, 
+    #            dict_filter=_header_dict_filter, 
+    #            qos_profile=qos_profile_sensor_data
+    #), # Detected obstacles from left camera WORKING
+
+    #TopicConfig('camera_floor_right/obstacles', sensor_msgs.msg.PointCloud2, 
+    #            dict_filter=_header_dict_filter, 
+    #            qos_profile=qos_profile_sensor_data
+    #), # Detected obstacles from right camera WORKING
+
+    ############################################################################
+
     # TopicConfig('check_area/polygon', geometry_msgs.msg.PolygonStamped),
     # TopicConfig('check_pose_area/polygon', geometry_msgs.msg.PolygonStamped),
     # TopicConfig('data_events/area_events', mir_data_msgs.msg.AreaEventEvent),
@@ -201,13 +387,26 @@ PUB_TOPICS = [
     # TopicConfig('data_events/positions', mir_data_msgs.msg.PositionEvent),
     # TopicConfig('data_events/registers', mir_data_msgs.msg.PLCRegisterEvent),
     # TopicConfig('data_events/sounds', mir_data_msgs.msg.SoundEvent),
-    # TopicConfig('diagnostics', diagnostic_msgs.msg.DiagnosticArray),
-    # TopicConfig('diagnostics_agg', diagnostic_msgs.msg.DiagnosticArray),
-    # TopicConfig('diagnostics_toplevel_state', diagnostic_msgs.msg.DiagnosticStatus),
-    #TopicConfig('f_raw_scan', sensor_msgs.msg.LaserScan),
-    TopicConfig('f_scan', LaserScan, dict_filter=_laser_scan_filter,
-                qos_profile=qos_profile_sensor_data),
-    # TopicConfig('imu_data', sensor_msgs.msg.Imu),
+    #TopicConfig('diagnostics', diagnostic_msgs.msg.DiagnosticArray, 
+    #            dict_filter=_diagnostic_array_dict_filter
+    #), # WORKING
+    #TopicConfig('diagnostics_agg', diagnostic_msgs.msg.DiagnosticArray, 
+    #            dict_filter=_diagnostic_array_dict_filter
+    #), # WORKING
+    #TopicConfig(
+    #    'diagnostics_toplevel_state', diagnostic_msgs.msg.DiagnosticStatus, 
+    #        dict_filter=_diagnostic_status_dict_filter
+    #), # WORKING
+    #TopicConfig(
+    #    'f_raw_scan', sensor_msgs.msg.LaserScan, dict_filter=_header_dict_filter, 
+    #        qos_profile=qos_profile_sensor_data
+    #),
+
+    TopicConfig('f_scan', LaserScan, dict_filter=_laser_scan_filter),
+    
+    TopicConfig('imu_data', sensor_msgs.msg.Imu, 
+                dict_filter=_header_dict_filter
+    ), # WORKING
     # TopicConfig('laser_back/driver/parameter_descriptions',
     #   dynamic_reconfigure.msg.ConfigDescription),
     # TopicConfig('laser_back/driver/parameter_updates', dynamic_reconfigure.msg.Config),
@@ -215,8 +414,8 @@ PUB_TOPICS = [
     #   dynamic_reconfigure.msg.ConfigDescription),
     # TopicConfig('laser_front/driver/parameter_updates', dynamic_reconfigure.msg.Config),
     # TopicConfig('localization_score', std_msgs.msg.Float64),
-    # TopicConfig('/map', nav_msgs.msg.OccupancyGrid, latch=True),
-    # TopicConfig('/map_metadata', nav_msgs.msg.MapMetaData),
+    #TopicConfig('/map', nav_msgs.msg.OccupancyGrid, dict_filter=_occupancy_grid_dict_filter, qos_profile=qos_profile_latching), # NOT WORKING
+    #TopicConfig('/map_metadata', nav_msgs.msg.MapMetaData, dict_filter=_map_meta_data_dict_filter), # NOT WORKING
     # TopicConfig('marker_tracking_node/feedback',
     #   mir_marker_tracking.msg.MarkerTrackingActionFeedback),
     # TopicConfig('marker_tracking_node/laser_line_extract/parameter_descriptions',
@@ -245,7 +444,8 @@ PUB_TOPICS = [
     # really mir_actions/MirMoveBaseActionResult:
     # TopicConfig('move_base/result', move_base_msgs.msg.MoveBaseActionResult,
     #   dict_filter=_move_base_result_dict_filter),
-    # TopicConfig('move_base/status', actionlib_msgs.msg.GoalStatusArray),
+    #TopicConfig('move_base/status', actionlib_msgs.msg.GoalStatusArray, 
+    #            dict_filter=_goal_status_array_dict_filter), # WORKING
     # TopicConfig('move_base_node/MIRPlannerROS/cost_cloud', sensor_msgs.msg.PointCloud2),
     # TopicConfig('move_base_node/MIRPlannerROS/global_plan', nav_msgs.msg.Path),
     # TopicConfig('move_base_node/MIRPlannerROS/len_to_goal', std_msgs.msg.Float64),
@@ -300,15 +500,15 @@ PUB_TOPICS = [
     # TopicConfig('move_base_node/traffic_costmap/unknown_space', nav_msgs.msg.GridCells),
     # TopicConfig('move_base_node/visualization_marker', visualization_msgs.msg.Marker),
     # TopicConfig('move_base_simple/visualization_marker', visualization_msgs.msg.Marker),
-    TopicConfig('odom', Odometry, dict_filter=_odom_dict_filter),
-    # TopicConfig('odom_enc', nav_msgs.msg.Odometry),
+    TopicConfig('odom', Odometry, dict_filter=_odom_dict_filter), # WORKING
+    # TopicConfig('odom_enc', nav_msgs.msg.Odometry, dict_filter=_odom_dict_filter),
     # TopicConfig('one_way_map', nav_msgs.msg.OccupancyGrid),
     # TopicConfig('param_update', std_msgs.msg.String),
     # TopicConfig('particlevizmarker', visualization_msgs.msg.MarkerArray),
     # TopicConfig('resource_tracker/needed_resources', mir_msgs.msg.ResourcesState),
-    # TopicConfig('robot_mode', mir_msgs.msg.RobotMode),
-    # TopicConfig('robot_pose', geometry_msgs.msg.Pose),
-    # TopicConfig('robot_state', mir_msgs.msg.RobotState),
+    #TopicConfig('robot_mode', mir_msgs.msg.RobotMode, dict_filter=_robot_mode_dict_filter), # WORKING
+    #TopicConfig('robot_pose', geometry_msgs.msg.Pose), # WORKING
+    #TopicConfig('robot_state', mir_msgs.msg.RobotState, dict_filter=_robot_state_dict_filter), # WORKING
     # TopicConfig('robot_status', mir_msgs.msg.RobotStatus),
     # TopicConfig('/rosout', rosgraph_msgs.msg.Log),
     # TopicConfig('/rosout_agg', rosgraph_msgs.msg.Log),
@@ -317,13 +517,17 @@ PUB_TOPICS = [
     # TopicConfig('scan', sensor_msgs.msg.LaserScan),
     # TopicConfig('scan_filter/parameter_descriptions', dynamic_reconfigure.msg.ConfigDescription),
     # TopicConfig('scan_filter/parameter_updates', dynamic_reconfigure.msg.Config),
-    # TopicConfig('scan_filter/visualization_marker', visualization_msgs.msg.Marker),
+    # TopicConfig('scan_filter/visualization_marker', visualization_msgs.msg.Marker, dict_filter=_marker_dict_filter),
     # TopicConfig('session_importer_node/info', mirSessionImporter.msg.SessionImportInfo),
     # TopicConfig('set_mc_PID', std_msgs.msg.Float64MultiArray),
     # let /tf be /tf if namespaced
-    TopicConfig('tf', TFMessage, dict_filter=_tf_dict_filter, topic_renamed='/tf'),
-    # TopicConfig('/tf_static', tf2_msgs.msg.TFMessage, dict_filter=_tf_static_dict_filter,
-    #             latch=True),
+    TopicConfig('tf', TFMessage, dict_filter=_tf_dict_filter, topic_renamed='/tf'), # WORKING
+    # TopicConfig(
+    #    '/tf_static',
+    #    tf2_msgs.msg.TFMessage,
+    #    dict_filter=_tf_dict_filter,
+    #    qos_profile=qos_profile_latching,  # TODO: _tf_static_dict_filter
+    #),
     # TopicConfig('traffic_map', nav_msgs.msg.OccupancyGrid),
     # TopicConfig('wifi_diagnostics', diagnostic_msgs.msg.DiagnosticArray),
     # TopicConfig('wifi_diagnostics/cur_ap', mir_wifi_msgs.msg.APInfo),
@@ -335,7 +539,7 @@ PUB_TOPICS = [
     # TopicConfig('wifi_watchdog/ping', mir_wifi_msgs.msg.APPingStats),
 ]
 
-# topics we want to subscribe to from ROS (and publish to the MiR)
+# topics we want to subscribe to from ROS2 (and publish to the MiR)
 SUB_TOPICS = [
     TopicConfig('cmd_vel', TwistStamped, 'cmd_vel_stamped')
     # TopicConfig('initialpose', geometry_msgs.msg.PoseWithCovarianceStamped),
@@ -347,9 +551,15 @@ SUB_TOPICS = [
     #   dict_filter=_move_base_goal_dict_filter),
 ]
 
-
+## @class PublisherWrapper
+#  @brief A wrapper class for handling the publication of topics to ROS2.
 class PublisherWrapper(object):
+    ## Constructor
+    #  @param topic_config Configuration for the topic.
+    #  @param nh Node handle for ROS2.
     def __init__(self, topic_config, nh):
+        self.time_filter = TimeFilter()
+        self.node_handle = nh
         self.topic_config = topic_config
         self.robot = nh.robot
         self.connected = False
@@ -371,6 +581,11 @@ class PublisherWrapper(object):
         # if topic_config.latch:
         self.peer_subscribe(None, None, None, nh)
 
+    ## Method to handle peer subscription.
+    #  @param topic_name Name of the topic.
+    #  @param topic_publish Publish function for the topic.
+    #  @param peer_publish Peer publish function.
+    #  @param nh Node handle for ROS2.
     def peer_subscribe(self, topic_name, topic_publish, peer_publish, nh):
         if not self.connected:
             self.connected = True
@@ -378,7 +593,9 @@ class PublisherWrapper(object):
                                  self.topic_config.topic)
             self.robot.subscribe(
                 topic=('/' + self.topic_config.topic), callback=self.callback)
-
+    
+    ## Callback method for handling incoming messages.
+    #  @param msg_dict Dictionary containing the message data.
     def callback(self, msg_dict):
         if not isinstance(msg_dict, dict):   # can happen during recursion
             return
@@ -389,8 +606,12 @@ class PublisherWrapper(object):
             self.topic_config.topic_type, msg_dict)
         self.pub.publish(msg)
 
-
+## @class SubscriberWrapper
+#  @brief A wrapper class for handling the subscription of topics from ROS2.
 class SubscriberWrapper(object):
+    ## Constructor
+    #  @param topic_config Configuration for the topic.
+    #  @param nh Node handle for ROS2.
     def __init__(self, topic_config, nh):
         self.topic_config = topic_config
         self.robot = nh.robot
@@ -404,6 +625,8 @@ class SubscriberWrapper(object):
         nh.get_logger().info("Subscribing to topic '%s' [%s]" % (
             topic_config.topic, topic_config.topic_type.__module__))
 
+    ## Callback method for handling incoming messages.
+    #  @param msg The message received from the topic.
     def callback(self, msg):
         if msg is None:
             return
@@ -415,7 +638,8 @@ class SubscriberWrapper(object):
             msg_dict = self.topic_config.dict_filter(msg_dict, to_ros2=False)
         self.robot.publish('/' + self.topic_config.topic, msg_dict)
 
-
+## @class MiR250BridgeNode
+#  @brief A ROS2 node for bridging communication between ROS2 and the MiR robot.
 class MiR250BridgeNode(Node):
     def __init__(self):
         super().__init__('mir_bridge')
@@ -467,7 +691,8 @@ class MiR250BridgeNode(Node):
         for pub_topic in PUB_TOPICS:
             PublisherWrapper(pub_topic, self)
             if ('/' + pub_topic.topic) not in published_topics:
-                self.get_logger().warn("Topic '%s' is not published by the MiR!" % pub_topic.topic)
+                self.get_logger().warn(
+                    "Topic '%s' is not published by the MiR!" % pub_topic.topic)
 
         for sub_topic in SUB_TOPICS:
             SubscriberWrapper(sub_topic, self)
@@ -477,6 +702,8 @@ class MiR250BridgeNode(Node):
 
         self.mir_bridge_ready = True
 
+    ## Method to retrieve topics from the MiR robot.
+    #  @return A list of topics with their types and subscription/publishing status.
     def get_topics(self):
         srv_response = self.robot.callService('/rosapi/topics', msg={})
         topic_names = sorted(srv_response['topics'])
@@ -500,25 +727,30 @@ class MiR250BridgeNode(Node):
             topics.append(
                 [topic_name, topic_type, has_publishers, has_subscribers])
 
-        print('Publishers:')
+        #print('PUBLISHERS:')
         for (topic_name, topic_type, has_publishers, has_subscribers) in topics:
             if has_publishers:
-                print((' * %s [%s]' % (topic_name, topic_type)))
+                #print((' * %s [%s]' % (topic_name, topic_type)))
+                pass
 
-        print('\nSubscribers:')
+        #print('\nSUBSCRIBERS:')
         for (topic_name, topic_type, has_publishers, has_subscribers) in topics:
             if has_subscribers:
-                print((' * %s [%s]' % (topic_name, topic_type)))
-
+                #print((' * %s [%s]' % (topic_name, topic_type)))
+                pass
         return topics
 
+    ## Callback method for checking the readiness of the MiR bridge.
+    #  @param request The service request.
+    #  @param response The service response.
+    #  @return The response indicating the readiness of the bridge.
     def mir_bridge_ready_poll_callback(self, request, response):
         self.get_logger().info('Checked for readiness')
         response.success = self.mir_bridge_ready
         response.message = ""
         return response
 
-
+## Main function to initialize and run the MiR250BridgeNode.
 def main(args=None):
     rclpy.init(args=args)
     node = MiR250BridgeNode()

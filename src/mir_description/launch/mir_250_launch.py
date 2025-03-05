@@ -1,3 +1,11 @@
+"""!
+@file mir_250_launch.py
+@brief Launch file for the MiR 250 robot description.
+
+This launch file sets up the robot description for the MiR 250 robot,
+including the robot state publisher and optionally the joint state publisher.
+"""
+
 import os
 
 from ament_index_python.packages import get_package_share_directory
@@ -10,11 +18,20 @@ import xacro
 
 
 def generate_launch_description():
+    """!
+    @brief Generate the launch description for the MiR 250 robot.
+    @return LaunchDescription object containing all the nodes and parameters.
+    """
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     mir_description_dir = get_package_share_directory('mir_description')
 
     def create_robot_description(context):
+        """!
+        @brief Create the robot description from XACRO file.
+        @param context The launch context.
+        @return A list containing a SetLaunchConfiguration action with the robot description.
+        """
         ns = context.launch_configurations['namespace']
         if ns.startswith('/'):
             ns = ns[1:]
