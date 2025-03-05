@@ -44,58 +44,42 @@ namespace merger_node
 
   void MergerNode::declare_param()
   {
-    this->declare_parameter("laser_1_topic", "laser_1");
-    this->declare_parameter("laser_2_topic", "laser_2");
+      //# Input and output topic configurations
+    this->declare_parameter("laser_1_topic", "f_scan");
+    this->declare_parameter("laser_2_topic", "b_scan");
     this->declare_parameter("merged_scan_topic", "mir_scan");
     this->declare_parameter("merged_cloud_topic", "mir_merged_cloud");
-    target_frame_param = this->declare_parameter("target_frame", "base_link");
-    tolerance_param = this->declare_parameter("tolerance", 0.01);
-    input_queue_size_param = this->declare_parameter("queue_size", 5);
-    min_height_param = this->declare_parameter("min_height", 0.0);
-    max_height_param = this->declare_parameter("max_height", 5.0);
-    angle_min_param = this->declare_parameter("angle_min", -M_PI);
-    angle_max_param = this->declare_parameter("angle_max", M_PI);
-    angle_increment_param = this->declare_parameter("angle_increment", 0.0029088794253766537);
-    scan_time_param = this->declare_parameter("scan_time", 0.000014);
-    range_min_param = this->declare_parameter("range_min", 0.1);
-    range_max_param = this->declare_parameter("range_max", 30.0);
-    inf_epsilon_param = this->declare_parameter("inf_epsilon", 1.0);
-    use_inf_param = this->declare_parameter("use_inf", false);
-    enable_calibration_param = this->declare_parameter("enable_calibration", false);
-    laser_1_x_offset = this->declare_parameter("laser_1_x_offset", 0.0);
-    laser_1_y_offset = this->declare_parameter("laser_1_y_offset", 0.0);
-    laser_1_yaw_offset = this->declare_parameter("laser_1_yaw_offset", 0.0);
-    laser_2_x_offset = this->declare_parameter("laser_2_x_offset", 0.0);
-    laser_2_y_offset = this->declare_parameter("laser_2_y_offset", 0.0);
-    laser_2_yaw_offset = this->declare_parameter("laser_2_yaw_offset", 0.0);
-    allowed_radius_param = this->declare_parameter("allowed_radius", 1.0);
-    enable_shadow_filter_param = this->declare_parameter("enable_shadow_filter", false);
-    enable_average_filter_param = this->declare_parameter("enable_average_filter", false);
-  }
 
-  void MergerNode::refresh_param()
-  {
-    this->get_parameter("tolerance", tolerance_param);
-    this->get_parameter("queue_size", input_queue_size_param);
-    this->get_parameter("min_height", min_height_param);
-    this->get_parameter("max_height", max_height_param);
-    this->get_parameter("angle_min", angle_min_param);
-    this->get_parameter("angle_max", angle_max_param);
-    this->get_parameter("angle_increment", angle_increment_param);
-    this->get_parameter("scan_time", scan_time_param);
-    this->get_parameter("range_min", range_min_param);
-    this->get_parameter("range_max", range_max_param);
-    this->get_parameter("inf_epsilon", inf_epsilon_param);
-    this->get_parameter("use_inf", use_inf_param);
-    this->get_parameter("laser_1_x_offset", laser_1_x_offset);
-    this->get_parameter("laser_1_y_offset", laser_1_y_offset);
-    this->get_parameter("laser_1_yaw_offset", laser_1_yaw_offset);
-    this->get_parameter("laser_2_x_offset", laser_2_x_offset);
-    this->get_parameter("laser_2_y_offset", laser_2_y_offset);
-    this->get_parameter("laser_2_yaw_offset", laser_2_yaw_offset);
-    this->get_parameter("allowed_radius", allowed_radius_param);
-    this->get_parameter("enable_shadow_filter", enable_shadow_filter_param);
-    this->get_parameter("enable_average_filter", enable_average_filter_param);
+    //# Frame and offset configurations
+    target_frame_param = this->declare_parameter("target_frame", "base_link"); //# Target frame for the merged scan
+    laser_1_x_offset = this->declare_parameter("laser_1_x_offset", 0.0); //# X offset of laser 1 from the target frame
+    laser_1_y_offset = this->declare_parameter("laser_1_y_offset", 0.0); //# Y offset of laser 1 from the target frame
+    laser_1_yaw_offset = this->declare_parameter("laser_1_yaw_offset", 0.0); //# Yaw offset of laser 1 from the target frame
+    laser_2_x_offset = this->declare_parameter("laser_2_x_offset", 0.0); //# X offset of laser 2 from the target frame
+    laser_2_y_offset = this->declare_parameter("laser_2_y_offset", 0.0); //# Y offset of laser 2 from the target frame
+    laser_2_yaw_offset = this->declare_parameter("laser_2_yaw_offset", 0.0); //# Yaw offset of laser 2 from the target frame
+
+    //# Merger operation parameters
+    tolerance_param = this->declare_parameter("tolerance", 0.01); //# Time tolerance for synchronizing laser scans
+    input_queue_size_param = this->declare_parameter("queue_size", 5); //# Size of the message queue for synchronization
+    angle_increment_param = this->declare_parameter("angle_increment", 0.0029088794253766537); //# Angular distance between measurements [rad]
+    scan_time_param = this->declare_parameter("scan_time", 0.000014); //# Time between measurements [s]
+    min_height_param = this->declare_parameter("min_height", -1.0); //# Minimum height to consider for merging [m] (negative value means no height constraint)
+    max_height_param = this->declare_parameter("max_height", -1.0); //# Maximum height to consider for merging [m] (negative value means no height constraint)
+    angle_min_param = this->declare_parameter("angle_min", -M_PI); //# Minimum angle to consider for merging [rad]
+    angle_max_param = this->declare_parameter("angle_max", M_PI); //# Maximum angle to consider for merging [rad]
+    range_min_param = this->declare_parameter("range_min", 0.1); //# Minimum range to consider for merging [m]
+    range_max_param = this->declare_parameter("range_max", 30.0); //# Maximum range to consider for merging [m] 
+
+    //# Additional merger parameters
+    inf_epsilon_param = this->declare_parameter("inf_epsilon", 1.0); //# Value to use for infinites in the merged scan
+    use_inf_param = this->declare_parameter("use_inf", false); //# If true, reports infinite values as [+inf], else as [range_max+1]
+    enable_calibration_param = this->declare_parameter("enable_calibration", false); 
+    allowed_radius_param = this->declare_parameter("allowed_radius", 1.0); //# Maximum allowed radius for considering points in the merger
+    
+    //# Filtering options
+    enable_shadow_filter_param = this->declare_parameter("enable_shadow_filter", false); //# Enable/disable shadow filtering
+    enable_average_filter_param = this->declare_parameter("enable_average_filter", false); //# Enable/disable average filtering
   }
 
   void MergerNode::sub_callback(
@@ -104,12 +88,8 @@ namespace merger_node
   {
     if (target_frame_param.empty()) {
       rclcpp::shutdown();
-    } else {
-      this->get_parameter<bool>("enable_calibration", enable_calibration_param);
-      if (enable_calibration_param) {
-        refresh_param();
-      }
-
+    } 
+    else {
       if(enable_average_filter_param) {
         lidar_1_avg = *lidar_1_msg;
         lidar_2_avg = *lidar_2_msg;
