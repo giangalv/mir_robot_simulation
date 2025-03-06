@@ -107,7 +107,7 @@ def generate_launch_description():
                 'frame_id': ''}], #empty frame_id
                 #'frame_id': '1955'}], #last update
             remappings=[
-                ('cmd_vel_in', 'cmd_vel'),
+                ('cmd_vel_in', 'cmd_vel_out'),
                 ('cmd_vel_out', 'cmd_vel_stamped'),],
             namespace=LaunchConfiguration('namespace'),
         ),

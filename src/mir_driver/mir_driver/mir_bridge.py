@@ -50,12 +50,6 @@ qos_profile_latching = QoSProfile(
     reliability=QoSReliabilityPolicy.RELIABLE,
 )
 
-qos_profile_scan = QoSProfile(
-    history=QoSHistoryPolicy.KEEP_LAST,
-    depth=10,
-    reliability=QoSReliabilityPolicy.BEST_EFFORT
-)
-
 class TimeFilter():
     def __init__(self):
         self.prev_time = 0
@@ -403,10 +397,11 @@ PUB_TOPICS = [
     #),
 
     TopicConfig('f_scan', LaserScan, dict_filter=_laser_scan_filter),
-    
+
     TopicConfig('imu_data', sensor_msgs.msg.Imu, 
                 dict_filter=_header_dict_filter
     ), # WORKING
+
     # TopicConfig('laser_back/driver/parameter_descriptions',
     #   dynamic_reconfigure.msg.ConfigDescription),
     # TopicConfig('laser_back/driver/parameter_updates', dynamic_reconfigure.msg.Config),
@@ -506,9 +501,11 @@ PUB_TOPICS = [
     # TopicConfig('param_update', std_msgs.msg.String),
     # TopicConfig('particlevizmarker', visualization_msgs.msg.MarkerArray),
     # TopicConfig('resource_tracker/needed_resources', mir_msgs.msg.ResourcesState),
-    #TopicConfig('robot_mode', mir_msgs.msg.RobotMode, dict_filter=_robot_mode_dict_filter), # WORKING
-    #TopicConfig('robot_pose', geometry_msgs.msg.Pose), # WORKING
-    #TopicConfig('robot_state', mir_msgs.msg.RobotState, dict_filter=_robot_state_dict_filter), # WORKING
+
+    TopicConfig('robot_mode', mir_msgs.msg.RobotMode, dict_filter=_robot_mode_dict_filter), # WORKING
+    TopicConfig('robot_pose', geometry_msgs.msg.Pose), # WORKING
+    TopicConfig('robot_state', mir_msgs.msg.RobotState, dict_filter=_robot_state_dict_filter), # WORKING
+
     # TopicConfig('robot_status', mir_msgs.msg.RobotStatus),
     # TopicConfig('/rosout', rosgraph_msgs.msg.Log),
     # TopicConfig('/rosout_agg', rosgraph_msgs.msg.Log),
@@ -521,7 +518,9 @@ PUB_TOPICS = [
     # TopicConfig('session_importer_node/info', mirSessionImporter.msg.SessionImportInfo),
     # TopicConfig('set_mc_PID', std_msgs.msg.Float64MultiArray),
     # let /tf be /tf if namespaced
+
     TopicConfig('tf', TFMessage, dict_filter=_tf_dict_filter, topic_renamed='/tf'), # WORKING
+    
     # TopicConfig(
     #    '/tf_static',
     #    tf2_msgs.msg.TFMessage,
@@ -541,14 +540,17 @@ PUB_TOPICS = [
 
 # topics we want to subscribe to from ROS2 (and publish to the MiR)
 SUB_TOPICS = [
-    TopicConfig('cmd_vel', TwistStamped, 'cmd_vel_stamped')
+    TopicConfig('cmd_vel', TwistStamped, 'cmd_vel_stamped'),
     # TopicConfig('initialpose', geometry_msgs.msg.PoseWithCovarianceStamped),
     # TopicConfig('light_cmd', std_msgs.msg.String),
     # TopicConfig('mir_cmd', std_msgs.msg.String),
     # TopicConfig('move_base/cancel', actionlib_msgs.msg.GoalID),
+
     # really mir_actions/MirMoveBaseActionGoal:
     # TopicConfig('move_base/goal', move_base_msgs.msg.MoveBaseActionGoal,
     #   dict_filter=_move_base_goal_dict_filter),
+
+    TopicConfig('robot_state', mir_msgs.msg.RobotState, 'robot_state_ordering'),
 ]
 
 ## @class PublisherWrapper

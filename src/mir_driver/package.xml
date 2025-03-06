@@ -24,12 +24,6 @@
   <depend>visualization_msgs</depend>
 
   <exec_depend>foxglove_bridge</exec_depend>
-  
-  <exec_depend>twist_stamper</exec_depend>
-  <exec_depend>twist_mux</exec_depend>
-  <exec_depend>joy</exec_depend>
-  <exec_depend>teleop_twist_keyboard</exec_depend>
-  <exec_depend>teleop_twist_joy</exec_depend>
 
   <exec_depend>mir_driver_node</exec_depend>
   <exec_depend>mir_gazebo_plugins</exec_depend>

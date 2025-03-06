@@ -22,7 +22,7 @@ find_package(slam_toolbox)
 
 
 install(DIRECTORY
-  config launch rviz maps behavior_trees
+  config launch rviz maps behavior_trees 
   DESTINATION share/${PROJECT_NAME}
 )
 
