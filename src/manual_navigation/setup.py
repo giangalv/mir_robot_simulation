@@ -18,8 +18,8 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='mir250ur5e',
-    maintainer_email='gianluca.galvagni99@gmail.com',
-    description='TODO: Package description',
+    maintainer_email='gianluca.galvagni@edu.unige.it',
+    description='Manual Navigation',
     license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={

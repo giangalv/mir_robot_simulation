@@ -1,3 +1,10 @@
+"""
+@file mir_restapi_server.py
+@brief ROS2 node that provides services to interact with the MiR REST API
+@details This node creates a bridge between ROS2 services and the MiR REST API,
+         allowing other ROS2 nodes to control and monitor the MiR robot.
+"""
+
 import time
 import sys
 
@@ -11,7 +18,17 @@ from rcl_interfaces.msg import SetParametersResult
 
 
 class MirRestAPIServer(Node):
+    """
+    @class MirRestAPIServer
+    @brief ROS2 node that provides services to interact with the MiR REST API
+    @details Creates services that allow other ROS2 nodes to control and monitor
+             the MiR robot through its REST API.
+    """
     def __init__(self):
+        """
+        @brief Constructor for the MirRestAPIServer class
+        @details Initializes the node, declares parameters, and sets up the API handle
+        """
         super().__init__('mir_restapi_server')
         self.get_logger().info("started")
 
@@ -37,6 +54,11 @@ class MirRestAPIServer(Node):
             )
 
     def setup_api_handle(self):
+        """
+        @brief Sets up the MiR REST API handle
+        @details Creates a MirRestAPI object if hostname and auth token are set
+                 and creates the ROS2 services
+        """
         if self.hostname != "" and self.auth != "":
             self.api_handle = mir_restapi.mir_restapi_lib.MirRestAPI(self.get_logger(), self.hostname, self.auth)
             self.get_logger().info("created MirRestAPI handle")
@@ -44,6 +66,11 @@ class MirRestAPIServer(Node):
             self.get_logger().info("created services")
 
     def parameters_callback(self, params):
+        """
+        @brief Callback for parameter changes
+        @param params List of parameters that have changed
+        @return SetParametersResult indicating success
+        """
         for param in params:
             if param.name == "mir_restapi_auth":
                 self.get_logger().info("Received auth token")
@@ -55,6 +82,11 @@ class MirRestAPIServer(Node):
         return SetParametersResult(successful=True)
 
     def create_services(self):
+        """
+        @brief Creates all the ROS2 services for interacting with the MiR REST API
+        @details Sets up services for time synchronization, status retrieval, sound control,
+                 emergency halt checking, mission execution, and system information retrieval
+        """
         self.create_service(Trigger, 'mir_sync_time', self.sync_time_callback)
         self.get_logger().info("Listening on 'mir_sync_time'")
 
@@ -82,7 +114,14 @@ class MirRestAPIServer(Node):
         self.create_service(Trigger, 'mir_get_settings', self.get_settings_callback)
         self.get_logger().info("Listening on 'mir_get_settings'")
 
+        self.create_service(Trigger, 'mir_set_manual_control', self.set_manual_control_callback)
+        self.get_logger().info("Listening on 'mir_set_manual_control'")
+
     def test_api_connection(self):
+        """
+        @brief Tests the connection to the MiR REST API
+        @return -1 if API handle is None, 0 if connection failed, 1 if connection successful
+        """
         if self.api_handle is None:
             return -1
 
@@ -99,12 +138,25 @@ class MirRestAPIServer(Node):
         return 1
 
     def reponse_api_handle_not_exists(self, response):
+        """
+        @brief Sets the response for when the API handle does not exist
+        @param response The response object to modify
+        @return The modified response object
+        """
         response.success = False
         response.message = 'API token and/or hostname not set yet'
         self.get_logger().error(response.message)
         return response
 
     def call_restapi_function(self, service_fct, request, response, args=None):
+        """
+        @brief Calls a MiR REST API function and sets the response accordingly
+        @param service_fct The MiR REST API function to call
+        @param request The request object
+        @param response The response object to modify
+        @param args Optional arguments for the service function
+        @return The modified response object
+        """
         if self.test_api_connection() == -1:
             response = self.reponse_api_handle_not_exists(response)
             return response
@@ -123,23 +175,53 @@ class MirRestAPIServer(Node):
             response.message = "ERROR: Couldn't connect to REST API"
         self.get_logger().error(response.message)
         return response
-
+    
+    def set_manual_control_callback(self, request, response):
+        self.get_logger().info('Setting manual control mode...')
+        response = self.call_restapi_function(self.api_handle.set_manual_control, request, response)
+        return response
+        
+        
     def sync_time_callback(self, request, response):
+        """
+        @brief Callback for the mir_sync_time service
+        @param request The request object
+        @param response The response object to modify
+        @return The modified response object
+        """
         self.get_logger().info('Syncing host time with REST API...')
         response = self.call_restapi_function(self.api_handle.sync_time, request, response)
         return response
 
     def get_status_callback(self, request, response):
+        """
+        @brief Callback for the mir_get_status service
+        @param request The request object
+        @param response The response object to modify
+        @return The modified response object
+        """
         self.get_logger().info('Getting status from REST API...')
         response = self.call_restapi_function(self.api_handle.get_status, request, response)
         return response
 
     def get_sounds_callback(self, request, response):
+        """
+        @brief Callback for the mir_get_sounds service
+        @param request The request object
+        @param response The response object to modify
+        @return The modified response object
+        """
         self.get_logger().info('Getting sounds from REST API...')
         response = self.call_restapi_function(self.api_handle.get_sounds, request, response)
         return response
 
     def is_emergency_halt_callback(self, request, response):
+        """
+        @brief Callback for the mir_is_emergency_halt service
+        @param request The request object
+        @param response The response object to modify
+        @return The modified response object with message set to "True" if in emergency halt, "False" otherwise
+        """
         self.get_logger().info('Checking REST API for emergency halt...')
         response = self.call_restapi_function(self.api_handle.get_state_id, request, response)
 
@@ -156,12 +238,24 @@ class MirRestAPIServer(Node):
         return response
 
     def get_missions_callback(self, request, response):
+        """
+        @brief Callback for the mir_get_missions service
+        @param request The request object
+        @param response The response object to modify
+        @return The modified response object
+        """
         self.get_logger().info('Getting missions from REST API...')
         response = self.call_restapi_function(self.api_handle.get_missions, request, response)
         return response
 
     def honk_callback(self,request,response):
-        
+        """
+        @brief Callback for the mir_honk service
+        @param request The request object
+        @param response The response object to modify
+        @return The modified response object
+        @details Executes the "honk" mission
+        """        
         req = ExecMission.Request()
         req.mission_name = "honk"
         resp = ExecMission.Response()
@@ -171,7 +265,14 @@ class MirRestAPIServer(Node):
         return response
 
     def exec_mission_callback(self, request, response):
-
+        """
+        @brief Callback for the mir_execute_mission service
+        @param request The request object containing the mission name
+        @param response The response object to modify
+        @return The modified response object
+        @details Adds the mission to the queue, checks for emergency halt,
+                 executes the mission, and waits for completion
+        """
         mission_name = request.mission_name
 
         queue_success, mission_queue_id = self.api_handle.add_mission_to_queue(mission_name)
@@ -205,17 +306,36 @@ class MirRestAPIServer(Node):
         return response
 
     def get_system_info_callback(self, request, response):
+        """
+        @brief Callback for the mir_get_system_info service
+        @param request The request object
+        @param response The response object to modify
+        @return The modified response object with system information
+        @details Retrieves system information from the MiR robot through the REST API
+        """
         self.get_logger().info('Getting system info from REST API...')
         response = self.call_restapi_function(self.api_handle.get_system_info, request, response)
         return response
 
     def get_settings_callback(self, request, response):
+        """
+        @brief Callback for the mir_get_settings service
+        @param request The request object
+        @param response The response object to modify
+        @return The modified response object with robot settings
+        @details Retrieves all settings from the MiR robot through the REST API
+        """
         self.get_logger().info('Getting settings from REST API...')
         response = self.call_restapi_function(self.api_handle.get_all_settings, request, response)
         return response
 
 
 def main(args=None):
+    """
+    @brief Main function for the MiR REST API server node
+    @param args Command line arguments
+    @details Initializes the ROS2 node, creates a MirRestAPIServer instance, and spins the node
+    """
     rclpy.init(args=args)
 
     mir_restapi_server = MirRestAPIServer()

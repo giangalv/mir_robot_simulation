@@ -71,6 +71,11 @@ the Mir's host.
     ```bash
     ros2 run mir_restapi mir_restapi_server --ros-args -p mir_hostname:='MIR_IP_ADDR' -p mir_restapi_auth:='YOUR_API_KEY' #distributor
     ```
+#######################################
+
+    ros2 run mir_restapi mir_restapi_server --ros-args -p mir_hostname:='130.251.13.90' -p mir_restapi_auth:='Basic ZGlzdHJpYnV0b3I6NjJmMmYwZjFlZmYxMGQzMTUyYzk1ZjZmMDU5NjU3NmU0ODJiYjhlNDQ4MDY0MzNmNGNmOTI5NzkyODM0YjAxNA=='
+
+#######################################
 
     MIR_IP_ADDR: 130.251.13.90 
     YOUR_API_KEY: Basic ZGlzdHJpYnV0b3I6NjJmMmYwZjFlZmYxMGQzMTUyYzk1ZjZmMDU5NjU3NmU0ODJiYjhlNDQ4MDY0MzNmNGNmOTI5NzkyODM0YjAxNA==

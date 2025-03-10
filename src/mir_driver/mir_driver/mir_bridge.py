@@ -503,10 +503,10 @@ PUB_TOPICS = [
     # TopicConfig('resource_tracker/needed_resources', mir_msgs.msg.ResourcesState),
 
     TopicConfig('robot_mode', mir_msgs.msg.RobotMode, dict_filter=_robot_mode_dict_filter), # WORKING
-    TopicConfig('robot_pose', geometry_msgs.msg.Pose), # WORKING
+    #TopicConfig('robot_pose', geometry_msgs.msg.Pose), # WORKING
     TopicConfig('robot_state', mir_msgs.msg.RobotState, dict_filter=_robot_state_dict_filter), # WORKING
 
-    # TopicConfig('robot_status', mir_msgs.msg.RobotStatus),
+    #TopicConfig('robot_status', mir_msgs.msg.RobotStatus), NOT WORKING
     # TopicConfig('/rosout', rosgraph_msgs.msg.Log),
     # TopicConfig('/rosout_agg', rosgraph_msgs.msg.Log),
     #TopicConfig('scan', LaserScan, dict_filter=_laser_scan_filter,
@@ -549,8 +549,7 @@ SUB_TOPICS = [
     # really mir_actions/MirMoveBaseActionGoal:
     # TopicConfig('move_base/goal', move_base_msgs.msg.MoveBaseActionGoal,
     #   dict_filter=_move_base_goal_dict_filter),
-
-    TopicConfig('robot_state', mir_msgs.msg.RobotState, 'robot_state_ordering'),
+    #TopicConfig('robot_state', mir_msgs.msg.RobotState, 'robot_state_ordering'),
 ]
 
 ## @class PublisherWrapper

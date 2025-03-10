@@ -22,7 +22,6 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'manual_mode = mir_driver.manual_mode:main',
             'mir_bridge = mir_driver.mir_bridge:main',
             'time_synchronizer = mir_driver.time_synchronizer:main',
             'tf_remove_child_frames = mir_driver.tf_remove_child_frames:main'
