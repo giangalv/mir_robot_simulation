@@ -2,13 +2,12 @@
 @file mir_launch.py
 @brief Launch file for MiR robot with teleoperation and RViz2 visualization.
 
-This launch file sets up the MiR robot's teleoperation and visualization components.
-It includes the teleoperation keyboard controller and RViz2 for monitoring the robot state.
+This launch file sets up the Rviz2 visualization and the foxglove visualization
 
 @section dependencies Dependencies
-- teleop_twist_keyboard
 - rviz2
 - mir_description
+- foxglove_bridge
 
 @section parameters Launch Parameters
 - namespace (string, default=""): Namespace to push all topics into.
@@ -16,8 +15,8 @@ It includes the teleoperation keyboard controller and RViz2 for monitoring the r
 - rviz_config_file (string, default="mir_visu_full.rviz"): Path to the RViz configuration file.
 
 @section nodes Nodes
-- teleop_twist_keyboard: Node for controlling the MiR robot using keyboard commands.
 - rviz2: Visualization tool for monitoring the MiR robot state.
+- foxglove_bridge: Visualization tool for monitoring the MiR robot state.
 
 @section usage Usage
 ros2 launch mir_description mir_launch.py [parameters]

@@ -1,32 +1,66 @@
+"""
+@file manual_control_launch.py
+@brief Launch file for manual control of the MiR robot.
+
+This launch file sets up the nodes required for manual control of the MiR robot,
+including twist multiplexer, keyboard teleoperation, joystick control, and a custom manual mode node.
+
+@section dependencies Dependencies
+- twist_mux
+- teleop_twist_keyboard
+- joy
+- teleop_twist_joy
+- manual_navigation
+
+@section parameters Launch Parameters
+- namespace (string, default=""): Namespace for launched nodes.
+- use_sim_time (bool, default=false): Use simulation time if true.
+
+@section nodes Nodes
+- twist_mux: Twist multiplexer node for prioritizing control sources.
+- teleop_twist_keyboard: Node for keyboard teleoperation.
+- joy_node: Node for reading joystick input.
+- teleop_twist_joy: Node for converting joystick input to Twist messages.
+- manual_mode: Custom node for manual navigation mode.
+
+@section usage Usage
+ros2 launch manual_navigation manual_control_launch.py [parameters]
+"""
+
 import os
 
 from launch_ros.actions import Node
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
-        
+    """
+    Generate launch description for manual control setup.
+
+    @return LaunchDescription object containing all nodes and parameters.
+    """
+    
     namespace = LaunchConfiguration('namespace')
-    mir_nav_dir = get_package_share_directory('manual_navigation')
+    manual_navigation_path = get_package_share_directory('manual_navigation')
+
+    # Define paths to configuration files
     twist_config = os.path.join(
-        get_package_share_directory('manual_navigation'),
+        manual_navigation_path,
         'config',
         'twist_mux.yaml'
     )
     joy_config = os.path.join(
-        get_package_share_directory('manual_navigation'),
+        manual_navigation_path,
         'config',
         'joy_config.yaml'
     )
     joy_initialization = os.path.join(
-        get_package_share_directory('manual_navigation'),
+        manual_navigation_path,
         'config',
         'joy_init.yaml'
     )
-    manual_mode_path = os.path.join(mir_nav_dir, 'launch', 'include', 'manual_mode.py')
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
 
     return LaunchDescription([
@@ -89,6 +123,7 @@ def generate_launch_description():
             ],
         ),
 
+        # Custom node for manual navigation mode
         Node(
             package='manual_navigation',
             executable='manual_mode',
@@ -97,6 +132,5 @@ def generate_launch_description():
             parameters=[
                 {'use_sim_time': use_sim_time}
             ],
-        )
-        
+        ) 
     ])

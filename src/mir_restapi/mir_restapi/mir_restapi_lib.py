@@ -205,6 +205,30 @@ class MirRestAPI:
         }
         return self.http.put("/status", json.dumps(manual_status))
     
+    def set_pause_control(self):
+        """
+        @brief Set the status of the MiR robot
+        @param newStatus New status to set
+        @return dict Response from the API
+        """
+        pause_status ={
+            "state_id": 4,
+            "web_session_id": "pause"
+        }
+        return self.http.put("/status", json.dumps(pause_status))
+    
+    def set_ready_control(self):
+        """
+        @brief Set the status of the MiR robot
+        @param newStatus New status to set
+        @return dict Response from the API
+        """
+        ready_status ={
+            "state_id": 3,
+            "web_session_id": "ready"
+        }
+        return self.http.put("/status", json.dumps(ready_status))
+    
     def is_ready(self):
         """
         @brief Check if the MiR robot is in the "Ready" state

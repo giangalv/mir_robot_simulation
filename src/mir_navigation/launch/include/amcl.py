@@ -1,16 +1,6 @@
-# Copyright (c) 2018 Intel Corporation
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+## @file amcl.py
+#  @brief Launch file for AMCL (Adaptive Monte Carlo Localization) in ROS2.
+#  This file sets up the necessary nodes and configurations for AMCL.
 
 import os
 
@@ -25,7 +15,9 @@ from launch_ros.actions import Node
 from launch_ros.descriptions import ComposableNode
 from nav2_common.launch import RewrittenYaml
 
-
+## @file amcl.py
+#  @brief Launch file for AMCL (Adaptive Monte Carlo Localization) in ROS2.
+#  This file sets up the necessary nodes and configurations for AMCL.
 def generate_launch_description():
     # Get the launch directory
     mir_nav_dir = get_package_share_directory('mir_navigation')
@@ -66,46 +58,56 @@ def generate_launch_description():
     stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_LOGGING_BUFFERED_STREAM', '1')
 
+    ## @brief Declare the namespace launch argument.
     declare_namespace_cmd = DeclareLaunchArgument(
         'namespace',
         default_value='',
         description='Top-level namespace')
 
+    ## @brief Declare the map YAML file launch argument.
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
         default_value=os.path.join(mir_nav_dir, 'maps', 'maze.yaml'),
         description='Full path to map yaml file to load')
 
+    ## @brief Declare the use_sim_time launch argument.
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
         default_value='false',
         description='Use simulation (Gazebo) clock if true')
 
+    ## @brief Declare the parameters file launch argument.
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
         default_value=os.path.join(mir_nav_dir, 'config', 'mir_nav_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
 
+    ## @brief Declare the autostart launch argument.
     declare_autostart_cmd = DeclareLaunchArgument(
         'autostart', default_value='true',
         description='Automatically startup the nav2 stack')
 
+    ## @brief Declare the use_composition launch argument.
     declare_use_composition_cmd = DeclareLaunchArgument(
         'use_composition', default_value='False',
         description='Use composed bringup if True')
 
+    ## @brief Declare the container name launch argument.
     declare_container_name_cmd = DeclareLaunchArgument(
         'container_name', default_value='nav2_container',
-        description='the name of conatiner that nodes will load in if use composition')
+        description='the name of container that nodes will load in if use composition')
 
+    ## @brief Declare the use_respawn launch argument.
     declare_use_respawn_cmd = DeclareLaunchArgument(
         'use_respawn', default_value='False',
         description='Whether to respawn if a node crashes. Applied when composition is disabled.')
 
+    ## @brief Declare the log level launch argument.
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info',
         description='log level')
 
+    ## @brief Load nodes for AMCL and related components.
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
         actions=[
@@ -167,7 +169,7 @@ def generate_launch_description():
         ],
     )
 
-    # Create the launch description and populate
+    ## @brief Create the launch description and populate it with actions.
     ld = LaunchDescription()
 
     # Set environment variables
@@ -184,7 +186,7 @@ def generate_launch_description():
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
 
-    # Add the actions to launch all of the localiztion nodes
+    # Add the actions to launch all of the localization nodes
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
 

@@ -1,3 +1,48 @@
+"""
+@file navigation.py
+@brief Launch file for navigation with the MiR robot.
+
+This launch file sets up the navigation stack for the MiR robot.
+It configures the necessary parameters and launches the required nodes for autonomous navigation.
+
+@section dependencies Dependencies
+- nav2_controller
+- nav2_smoother
+- nav2_planner
+- nav2_behaviors
+- nav2_bt_navigator
+- nav2_waypoint_follower
+- nav2_velocity_smoother
+- nav2_lifecycle_manager
+
+@section parameters Launch Parameters
+- namespace (string, default=""): Top-level namespace.
+- use_sim_time (bool, default=false): Use simulation (Gazebo) clock if true.
+- params_file (string): Full path to the ROS2 parameters file.
+- autostart (bool, default=true): Automatically startup the nav2 stack.
+- use_composition (bool, default=false): Use composed bringup if True.
+- container_name (string, default="nav2_container"): Name of container that nodes will load in if using composition.
+- use_respawn (bool, default=false): Whether to respawn if a node crashes. Applied when composition is disabled.
+- log_level (string, default="info"): Log level for nodes.
+- cmd_vel_topic (string, default="cmd_vel_out"): Define cmd_vel topic.
+- default_nav_to_pose_bt_xml (string): Path to the default navigation to pose behavior tree XML file.
+- default_nav_through_pose_bt_xml (string): Path to the default navigation through poses behavior tree XML file.
+
+@section nodes Nodes
+- controller_server: Controller server for navigation.
+- smoother_server: Path smoothing server.
+- planner_server: Global path planner server.
+- behavior_server: Navigation behavior server.
+- bt_navigator: Behavior tree navigator.
+- waypoint_follower: Waypoint following node.
+- velocity_smoother: Velocity smoothing node.
+- lifecycle_manager_navigation: Lifecycle manager for navigation nodes.
+
+@section usage Usage
+Include this launch file in a main launch file or run directly:
+ros2 launch mir_navigation navigation.py params_file:=/path/to/nav_params.yaml
+"""
+
 # Copyright (c) 2018 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,11 +72,16 @@ from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
+    """
+    Generate launch description for navigation stack.
+
+    @return LaunchDescription object containing all nodes and parameters for navigation.
+    """
     # Get the launch directory
     mir_nav_dir = get_package_share_directory('mir_navigation')
 
     namespace = LaunchConfiguration('namespace')
-    use_sim_time = LaunchConfiguration('use_sim_time')
+    use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfiguration('use_composition')
@@ -114,7 +164,7 @@ def generate_launch_description():
         description='log level')
 
     declare_cmd_vel_cmd = DeclareLaunchArgument(
-        'cmd_vel_topic', default_value='diff_cont/cmd_vel_unstamped',
+        'cmd_vel_topic', default_value='cmd_vel_out',
         description='Define cmd_vel topic')
 
     declare_bt_nav_cmd = DeclareLaunchArgument(
@@ -124,6 +174,12 @@ def generate_launch_description():
         'default_nav_through_pose_bt_xml', default_value='')
 
     def add_prefix_to_cmd_vel(context):
+        """
+        Add namespace prefix to cmd_vel topic if namespace is provided.
+
+        @param context: Launch context
+        @return List containing SetLaunchConfiguration action
+        """
         topic = context.launch_configurations['cmd_vel_topic']
         try:
             namespace = context.launch_configurations['namespace']
@@ -293,6 +349,7 @@ def generate_launch_description():
     ld.add_action(declare_bt_nav_cmd)
     ld.add_action(declare_bt_nav_through_cmd)
     ld.add_action(OpaqueFunction(function=add_prefix_to_cmd_vel))
+
     # Add the actions to launch all of the navigation nodes
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)

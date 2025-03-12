@@ -117,6 +117,12 @@ class MirRestAPIServer(Node):
         self.create_service(Trigger, 'mir_set_manual_control', self.set_manual_control_callback)
         self.get_logger().info("Listening on 'mir_set_manual_control'")
 
+        self.create_service(Trigger, 'mir_set_pause_control', self.set_pause_control_callback)
+        self.get_logger().info("Listening on 'mir_set_pause_control'")
+
+        self.create_service(Trigger, 'mir_set_ready_control', self.set_ready_control_callback)
+        self.get_logger().info("Listening on 'mir_set_ready_control'")
+
     def test_api_connection(self):
         """
         @brief Tests the connection to the MiR REST API
@@ -177,10 +183,37 @@ class MirRestAPIServer(Node):
         return response
     
     def set_manual_control_callback(self, request, response):
+        """
+        @brief Callback for the mir_set_manual_control service
+        @param request The request object
+        @param response The response object to modify
+        @return The modified response object
+        """
         self.get_logger().info('Setting manual control mode...')
         response = self.call_restapi_function(self.api_handle.set_manual_control, request, response)
         return response
         
+    def set_pause_control_callback(self, request, response):
+        """
+        @brief Callback for the mir_set_pause_control service
+        @param request The request object
+        @param response The response object to modify
+        @return The modified response object
+        """
+        self.get_logger().info('Setting pause control mode...')
+        response = self.call_restapi_function(self.api_handle.set_pause_control, request, response)
+        return response
+    
+    def set_ready_control_callback(self, request, response):
+        """
+        @brief Callback for the mir_set_ready_control service
+        @param request The request object
+        @param response The response object to modify
+        @return The modified response object
+        """
+        self.get_logger().info('Setting ready control mode...')
+        response = self.call_restapi_function(self.api_handle.set_ready_control, request, response)
+        return response
         
     def sync_time_callback(self, request, response):
         """

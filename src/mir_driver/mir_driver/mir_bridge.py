@@ -693,13 +693,13 @@ class MiR250BridgeNode(Node):
             PublisherWrapper(pub_topic, self)
             if ('/' + pub_topic.topic) not in published_topics:
                 self.get_logger().warn(
-                    "Topic '%s' is not published by the MiR!" % pub_topic.topic)
+                    "Topic '%s' is NOT published by the MiR!" % pub_topic.topic)
 
         for sub_topic in SUB_TOPICS:
             SubscriberWrapper(sub_topic, self)
             if ('/' + sub_topic.topic) not in subscribed_topics:
                 self.get_logger().warn(
-                    "Topic '%s' is not yet subscribed to by the MiR!" % sub_topic.topic)
+                    "Topic '%s' is NOT yet subscribed to by the MiR!" % sub_topic.topic)
 
         self.mir_bridge_ready = True
 
