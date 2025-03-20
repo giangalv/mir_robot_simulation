@@ -55,7 +55,7 @@ def generate_launch_description():
 
       DeclareLaunchArgument(
         'joint_state_publisher_enabled',
-        default_value='false',
+        default_value='true', # before was false
         description='Enable to publish joint states using joint state publisher'),
 
       OpaqueFunction(function=create_robot_description),

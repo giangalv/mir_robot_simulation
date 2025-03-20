@@ -10,8 +10,8 @@
 # @brief Controller manager configuration
 controller_manager:
   ros__parameters:
-    update_rate: 41.2 #100 #30 ## @param update_rate Controller update rate in Hz
-    use_sim_time: true ## @param use_sim_time Use simulation time
+    update_rate: 30 #41.2 #100 ## @param update_rate Controller update rate in Hz
+    use_sim_time: false ## @param use_sim_time Use simulation time
 
     ## @brief Differential drive controller
     diff_cont:

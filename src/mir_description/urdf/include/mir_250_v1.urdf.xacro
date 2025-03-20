@@ -39,7 +39,7 @@
   <xacro:property name="mir_250_back_caster_wheel_base_dx" value="-0.296" />
   <xacro:property name="mir_250_caster_wheel_base_dy" value="0.188" />
   <xacro:property name="mir_250_caster_wheel_base_dz" value="${mir_250_caster_wheel_radius - mir_250_caster_wheel_dz}" />
-
+  
   <!-- MIR_250 properties -->
   <xacro:property name="mir_250_base_mass" value="97.0" /> 
 

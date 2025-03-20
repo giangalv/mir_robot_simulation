@@ -18,12 +18,6 @@
 
   <xacro:mir_250 prefix="${prefix}" ns="${ns}"/> 
 
-  <!-- <xacro:diff_controller_plugin_gazebo prefix="${prefix}" ns="${ns}"
-    left_wheel_joint="${prefix}left_wheel_joint"
-    right_wheel_joint="${prefix}right_wheel_joint"
-    wheel_separation="${2*mir_100_act_wheel_dy}"
-    wheel_radius="${mir_100_act_wheel_radius}"/> -->
-
   <!-- <xacro:mir_ros2_control
     left_wheel_joint="${prefix}left_wheel_joint"
     right_wheel_joint="${prefix}right_wheel_joint"/>  -->

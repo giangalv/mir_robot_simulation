@@ -45,12 +45,6 @@ def generate_launch_description():
         default_value='false',
         description='Use real time if false')
 
-    # Declare the slam_params_file parameter
-    #declare_slam_params_file_cmd = DeclareLaunchArgument(
-    #    'slam_params_file',
-    #    description='Full path to the ROS2 parameters file to use for the slam_toolbox node'
-    #)
-
     # Configure the SLAM Toolbox node
     launch_mapping = Node(
         parameters=[
@@ -65,7 +59,6 @@ def generate_launch_description():
 
     # Add all actions to the launch description
     ld.add_action(declare_use_sim_time_argument)
-    #ld.add_action(declare_slam_params_file_cmd)
     ld.add_action(launch_mapping)
 
     return ld
