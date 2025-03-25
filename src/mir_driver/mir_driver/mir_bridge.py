@@ -23,21 +23,21 @@ from collections.abc import Iterable
 
 from rclpy_message_converter import message_converter
 
-from geometry_msgs.msg import TwistStamped
+from geometry_msgs.msg import TwistStamped, Pose
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import LaserScan, PointCloud2
+from sensor_msgs.msg import LaserScan, PointCloud2, Imu
 from tf2_msgs.msg import TFMessage
 from std_srvs.srv import Trigger
+from mir_msgs.msg import RobotMode, RobotState
+
 
 import mir_driver.rosbridge
 import actionlib_msgs.msg
 import diagnostic_msgs.msg
-import geometry_msgs.msg
 import mir_msgs.msg
 import nav_msgs.msg
 import sdc21x0.msg
 import sensor_msgs.msg
-import tf2_msgs.msg
 import visualization_msgs.msg
 import std_msgs 
 
@@ -100,6 +100,13 @@ def _odom_dict_filter(msg_dict,  to_ros2):
     filtered_msg_dict['header'] = _convert_ros_header(filtered_msg_dict['header'], to_ros2)
     filtered_msg_dict['child_frame_id'] = tf_prefix + \
         filtered_msg_dict['child_frame_id'].strip('/')
+    return filtered_msg_dict
+
+def _imu_dict_filter(msg_dict, to_ros2):
+    filtered_msg_dict = copy.deepcopy(msg_dict)
+    filtered_msg_dict['header'] = _convert_ros_header(filtered_msg_dict['header'], to_ros2)
+    # Change the frame ID to "laser"
+    filtered_msg_dict['header']['frame_id'] = 'imu_link' 
     return filtered_msg_dict
 
 ## @brief Filter function for transform messages.
@@ -328,29 +335,20 @@ def _remove_tf_prefix_dict_filter(msg_dict):
 #  and subscribed from the MiR, including optional filters and quality of
 #  service profiles.
 PUB_TOPICS = [
-    TopicConfig('camera_floor_left/floor', PointCloud2,
-                dict_filter=_header_dict_filter
-    ), # WORKING
-    TopicConfig('camera_floor_left/obstacles', PointCloud2,
-                dict_filter=_header_dict_filter
-    ), # WORKING
-    TopicConfig('camera_floor_right/floor', PointCloud2,
-                dict_filter=_header_dict_filter
-    ), # WORKING
-    TopicConfig('camera_floor_right/obstacles', PointCloud2,
-                dict_filter=_header_dict_filter
-    ), # WORKING
+    #TopicConfig('camera_floor_left/floor', PointCloud2, dict_filter=_header_dict_filter), # WORKING
+    TopicConfig('camera_floor_left/obstacles', PointCloud2, dict_filter=_header_dict_filter), # WORKING
+    #TopicConfig('camera_floor_right/floor', PointCloud2, dict_filter=_header_dict_filter), # WORKING
+    TopicConfig('camera_floor_right/obstacles', PointCloud2, dict_filter=_header_dict_filter), # WORKING
     TopicConfig('b_scan', LaserScan, dict_filter=_laser_scan_filter),
     TopicConfig('f_scan', LaserScan, dict_filter=_laser_scan_filter),
-
-    TopicConfig('imu_data', sensor_msgs.msg.Imu, 
-                dict_filter=_header_dict_filter
-    ), # WORKING
+    TopicConfig('imu_data', Imu, dict_filter=_imu_dict_filter), # WORKING
     TopicConfig('odom', Odometry, dict_filter=_odom_dict_filter), # WORKING
-    TopicConfig('robot_mode', mir_msgs.msg.RobotMode, dict_filter=_robot_mode_dict_filter), # WORKING
-    #TopicConfig('robot_pose', geometry_msgs.msg.Pose), # WORKING
-    TopicConfig('robot_state', mir_msgs.msg.RobotState, dict_filter=_robot_state_dict_filter), # WORKING
+    #TopicConfig('robot_mode', RobotMode, dict_filter=_robot_mode_dict_filter), # WORKING
+    #TopicConfig('robot_pose', Pose), # WORKING
+    #TopicConfig('robot_state', RobotState, dict_filter=_robot_state_dict_filter), # WORKING
     TopicConfig('tf', TFMessage, dict_filter=_tf_dict_filter, topic_renamed='/tf'), # WORKING
+    TopicConfig('tf_static', TFMessage, dict_filter=_tf_dict_filter, topic_renamed='/tf_static'), # WORKING
+
     # TopicConfig('LightCtrl/bms_data', mir_msgs.msg.BMSData),
     # TopicConfig('LightCtrl/charging_state', mir_msgs.msg.ChargingState),
     #TopicConfig('LightCtrl/us_list', sensor_msgs.msg.Range, dict_filter=_header_dict_filter), # NOT WORKING
@@ -366,10 +364,7 @@ PUB_TOPICS = [
     # TopicConfig('SickPLC/parameter_updates', dynamic_reconfigure.msg.Config),
     # TopicConfig('active_mapping_guid', std_msgs.msg.String),
     # TopicConfig('amcl_pose', geometry_msgs.msg.PoseWithCovarianceStamped),
-    # TopicConfig(
-    #    'b_raw_scan', sensor_msgs.msg.LaserScan, dict_filter=_header_dict_filter,
-    #      qos_profile=qos_profile_sensor_data
-    # ),
+
     # TopicConfig('check_area/polygon', geometry_msgs.msg.PolygonStamped),
     # TopicConfig('check_pose_area/polygon', geometry_msgs.msg.PolygonStamped),
     # TopicConfig('data_events/area_events', mir_data_msgs.msg.AreaEventEvent),
@@ -387,16 +382,7 @@ PUB_TOPICS = [
     #    'diagnostics_toplevel_state', diagnostic_msgs.msg.DiagnosticStatus, 
     #        dict_filter=_diagnostic_status_dict_filter
     #), # WORKING
-    #TopicConfig(
-    #    'f_raw_scan', sensor_msgs.msg.LaserScan, dict_filter=_header_dict_filter, 
-    #        qos_profile=qos_profile_sensor_data
-    #),
-    # TopicConfig('laser_back/driver/parameter_descriptions',
-    #   dynamic_reconfigure.msg.ConfigDescription),
-    # TopicConfig('laser_back/driver/parameter_updates', dynamic_reconfigure.msg.Config),
-    # TopicConfig('laser_front/driver/parameter_descriptions',
-    #   dynamic_reconfigure.msg.ConfigDescription),
-    # TopicConfig('laser_front/driver/parameter_updates', dynamic_reconfigure.msg.Config),
+
     # TopicConfig('localization_score', std_msgs.msg.Float64),
     #TopicConfig('/map', nav_msgs.msg.OccupancyGrid, dict_filter=_occupancy_grid_dict_filter, qos_profile=qos_profile_latching), # NOT WORKING
     #TopicConfig('/map_metadata', nav_msgs.msg.MapMetaData, dict_filter=_map_meta_data_dict_filter), # NOT WORKING
@@ -504,16 +490,10 @@ PUB_TOPICS = [
     # TopicConfig('scan_filter/visualization_marker', visualization_msgs.msg.Marker, dict_filter=_marker_dict_filter),
     # TopicConfig('session_importer_node/info', mirSessionImporter.msg.SessionImportInfo),
     # TopicConfig('set_mc_PID', std_msgs.msg.Float64MultiArray),
-    # let /tf be /tf if namespaced
 
     
     
-    # TopicConfig(
-    #    '/tf_static',
-    #    tf2_msgs.msg.TFMessage,
-    #    dict_filter=_tf_dict_filter,
-    #    qos_profile=qos_profile_latching,  # _tf_static_dict_filter
-    #),
+    
     # TopicConfig('traffic_map', nav_msgs.msg.OccupancyGrid),
     # TopicConfig('wifi_diagnostics', diagnostic_msgs.msg.DiagnosticArray),
     # TopicConfig('wifi_diagnostics/cur_ap', mir_wifi_msgs.msg.APInfo),

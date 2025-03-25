@@ -28,22 +28,23 @@ namespace merger_node
     }
 
     laser_1_sub.subscribe(
-      this, this->get_parameter("laser_1_topic").as_string(),
-      rclcpp::SensorDataQoS().get_rmw_qos_profile());
-
-    laser_2_sub.subscribe(
-      this, this->get_parameter("laser_2_topic").as_string(),
-      rclcpp::SensorDataQoS().get_rmw_qos_profile());
+      this, this->get_parameter("laser_1_topic").as_string());
     
+    laser_2_sub.subscribe(
+      this, this->get_parameter("laser_2_topic").as_string());
+  
     merged_scan_pub =
-      this->create_publisher<sensor_msgs::msg::LaserScan>(this->get_parameter(
-        "merged_scan_topic").as_string(), rclcpp::SensorDataQoS());
+      this->create_publisher<sensor_msgs::msg::LaserScan>(
+        this->get_parameter("merged_scan_topic").as_string(),
+        rclcpp::QoS(10));  // Use default QoS with a queue size of 10
     
     /*
     merged_cloud_pub =
-      this->create_publisher<sensor_msgs::msg::PointCloud2>(this->get_parameter(
-        "merged_cloud_topic").as_string(), rclcpp::SensorDataQoS());
-*/
+      this->create_publisher<sensor_msgs::msg::PointCloud2>(
+        this->get_parameter("merged_cloud_topic").as_string(),
+        rclcpp::QoS(10));  // Use default QoS with a queue size of 10
+    */
+   
     tf2_buffer = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf2_listener = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer, this);
 
@@ -74,7 +75,7 @@ namespace merger_node
     this->declare_parameter("merged_cloud_topic", "mir_merged_cloud");
 
     //# Frame and offset configurations
-    target_frame_param = this->declare_parameter("target_frame", "base_footprint");  // base_link //# Target frame for the merged scan
+    target_frame_param = this->declare_parameter("target_frame", "base_footprint");  // virtual_laser_link //# Target frame for the merged scan
     laser_1_x_offset = this->declare_parameter("laser_1_x_offset", 0.0); //# X offset of laser 1 from the target frame
     laser_1_y_offset = this->declare_parameter("laser_1_y_offset", 0.0); //# Y offset of laser 1 from the target frame
     laser_1_yaw_offset = this->declare_parameter("laser_1_yaw_offset", 0.0); //# Yaw offset of laser 1 from the target frame
