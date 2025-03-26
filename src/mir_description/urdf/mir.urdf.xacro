@@ -76,12 +76,13 @@
     </joint>
   </ros2_control>
 
+  <!-- 
   <gazebo>
-    <!-- Joint state publisher -->
     <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
       <parameters>$(find mir_description)/config/diffdrive_controller.yaml</parameters>
+      <controller_manager_node_name>controller_manager</controller_manager_node_name>
     </plugin>
   </gazebo>
-
-
+  -->
+  
 </robot>

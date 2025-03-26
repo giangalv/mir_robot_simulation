@@ -29,7 +29,7 @@ from launch_ros.actions import Node
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.substitutions import LaunchConfiguration
-from launch.launch_description_sources import FrontendLaunchDescriptionSource
+from launch.launch_description_sources import FrontendLaunchDescriptionSource, PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
@@ -44,6 +44,7 @@ def generate_launch_description():
     
     # Get the package share directory for mir_description
     mir_description_dir = get_package_share_directory('mir_description')
+    scan_merger_dir = get_package_share_directory('dual_laser_merger')
     
     # Define launch configurations
     use_sim_time = LaunchConfiguration('use_sim_time', default=False)
@@ -61,7 +62,26 @@ def generate_launch_description():
             default_value=os.path.join(mir_description_dir, 'rviz', 'mir_visu_full.rviz'),
             description='Define RViz config file to be used'
         ),
+
+        # Include laser scan merger launch file
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(scan_merger_dir, 'launch', 'demo_laser_merger.launch.py')),
+            launch_arguments={
+                'namespace': LaunchConfiguration('namespace'),
+                'use_sim_time': LaunchConfiguration('use_sim_time')
+            }.items()
+        ),
         
+        # Include ur cam merger node
+        Node(
+            package='manual_navigation',
+            executable='cloud_transformation',
+            name='cloud_transformation',
+            namespace=LaunchConfiguration('namespace'),
+            parameters=[{'use_sim_time': use_sim_time}]
+        ),
+
         # Start RViz2 for visualization
         Node(
             package='rviz2',
@@ -72,7 +92,7 @@ def generate_launch_description():
         ),
 
         #Foxglove for visualization 
-        IncludeLaunchDescription(
-            FrontendLaunchDescriptionSource(foxglove_launch)
-        ),
+        #IncludeLaunchDescription(
+        #    FrontendLaunchDescriptionSource(foxglove_launch)
+        #),
     ])

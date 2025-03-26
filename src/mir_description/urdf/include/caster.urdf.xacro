@@ -4,7 +4,7 @@
 
   <xacro:macro name="caster_wheel" params="prefix ns locationprefix locationright wheel_base_dx">
     <!-- caster hub -->
-    <joint name="${prefix}${locationprefix}_caster_rotation_joint" type="continuous">
+    <joint name="${prefix}${locationprefix}_caster_rotation_joint" type="continuous"> <!-- fixed -->
       <origin xyz="${wheel_base_dx} ${-mir_250_caster_wheel_base_dy * locationright} ${mir_250_caster_wheel_base_dz}" rpy="0 0 0" />
       <parent link="${prefix}base_link" />
       <child link="${prefix}${locationprefix}_caster_rotation_link" />
@@ -54,7 +54,7 @@
     </gazebo>
 
     <!-- caster wheel -->
-    <joint name="${prefix}${locationprefix}_caster_wheel_joint" type="continuous">
+    <joint name="${prefix}${locationprefix}_caster_wheel_joint" type="continuous"> <!-- fixed -->
       <origin xyz="${mir_250_caster_wheel_dx} ${-mir_250_caster_wheel_dy * locationright} ${mir_250_caster_wheel_dz}" rpy="0 0 0" />
       <parent link="${prefix}${locationprefix}_caster_rotation_link" />
       <child link="${prefix}${locationprefix}_caster_wheel_link" />

@@ -4,8 +4,8 @@
   <xacro:include filename="$(find mir_description)/urdf/include/common_properties.urdf.xacro" />
   <xacro:include filename="$(find mir_description)/urdf/include/imu.gazebo.urdf.xacro" />
   <xacro:include filename="$(find mir_description)/urdf/include/sick_s300.urdf.xacro" />
-  <xacro:include filename="$(find mir_description)/urdf/include/wheel.urdf.xacro" />
-  <xacro:include filename="$(find mir_description)/urdf/include/caster.urdf.xacro" /> 
+  <xacro:include filename="$(find mir_description)/urdf/include/wheel.urdf.xacro"/>
+  <xacro:include filename="$(find mir_description)/urdf/include/caster.urdf.xacro"/>
   <!-- 
   UR5e xacro files
   <xacro:include filename="$(find realsense2_description)/urdf/_d435i.urdf.xacro"/>
@@ -16,6 +16,7 @@
   <!-- The inertia for the MIR platform is intentionally chosen to be smaller than
        the bounding box and also shifted a bit to the back, because most of the mass
        is in the lower center back (because of the batteries). -->
+  <xacro:property name="wheel_separation" value="0.403"/> <!-- Distance between wheels -->
   <xacro:property name="mir_base_inertial_x" value="-0.05" />
   <xacro:property name="mir_base_inertial_y" value="0.0" />
   <xacro:property name="mir_base_inertial_z" value="0.15" />
@@ -76,6 +77,14 @@
       <material>Gazebo/Grey</material>
     </gazebo>
 
+    <!--
+    <link name="${prefix}odom"/>
+    <joint name="${prefix}odom_joint" type="fixed">
+      <parent link="${prefix}odom"/>
+      <child link="${prefix}base_footprint"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint> -->
+
     <!-- IMU -->
     <joint name="${prefix}base_link_to_imu_joint" type="fixed">
       <parent link="${prefix}base_link" />
@@ -130,19 +139,19 @@
     <!-- Ultrasound sensors -->
     <joint name="${prefix}us_1_joint" type="fixed">   <!-- right ultrasound -->
       <parent link="${prefix}base_link" />
-      <child link="${prefix}us_1_frame" />
+      <child link="${prefix}camera_floor_right_link" />
       <origin xyz="0.45 -0.12 0.16 " rpy="0 0 0" />  <!-- from visually matching to the mesh of the MiR -->
     </joint>
 
-    <link name="${prefix}us_1_frame" />
+    <link name="${prefix}camera_floor_right_link" />
 
     <joint name="${prefix}us_2_joint" type="fixed">   <!-- left ultrasound -->
       <parent link="${prefix}base_link" />
-      <child link="${prefix}us_2_frame" />
+      <child link="${prefix}camera_floor_left_link" />
       <origin xyz="0.45 0.12 0.16 " rpy="0 0 0" />  <!-- from visually matching to the mesh of the MiR -->
     </joint>
 
-    <link name="${prefix}us_2_frame" />
+    <link name="${prefix}camera_floor_left_link" />
 
     <!-- wheels -->
     <xacro:actuated_wheel prefix="${prefix}" locationprefix="left" locationright="-1"/>

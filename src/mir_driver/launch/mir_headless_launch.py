@@ -46,7 +46,6 @@ def generate_launch_description():
     """
 
     mir_description_dir = get_package_share_directory('mir_description')
-    scan_merger_dir = get_package_share_directory('dual_laser_merger')
 
     return LaunchDescription([
 
@@ -75,18 +74,6 @@ def generate_launch_description():
             default_value='true',
             description='Set to true to publish tf using mir_description'),
 
-        # Include MiR description launch file
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(mir_description_dir, 'launch', 'mir_250_launch.py')),
-            launch_arguments={
-                'joint_state_publisher_enabled': 'true', # was false
-                'namespace': LaunchConfiguration('namespace')
-            }.items(),
-            condition=IfCondition(LaunchConfiguration(
-                'robot_state_publisher_enabled'))
-        ),
-
         # Mir bridge node
         Node(
             package='mir_driver',
@@ -112,13 +99,15 @@ def generate_launch_description():
             namespace=LaunchConfiguration('namespace'),
         ),
 
-        # Include laser scan merger launch file
+        # Include MiR description launch file
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                os.path.join(scan_merger_dir, 'launch', 'demo_laser_merger.launch.py')),
+                os.path.join(mir_description_dir, 'launch', 'mir_250_launch.py')),
             launch_arguments={
-                'namespace': LaunchConfiguration('namespace'),
-                'use_sim_time': LaunchConfiguration('use_sim_time')
-            }.items()
+                'joint_state_publisher_enabled': 'true', # was false
+                'namespace': LaunchConfiguration('namespace')
+            }.items(),
+            condition=IfCondition(LaunchConfiguration(
+                'robot_state_publisher_enabled'))
         )
     ])

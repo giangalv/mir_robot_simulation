@@ -106,7 +106,7 @@ def _imu_dict_filter(msg_dict, to_ros2):
     filtered_msg_dict = copy.deepcopy(msg_dict)
     filtered_msg_dict['header'] = _convert_ros_header(filtered_msg_dict['header'], to_ros2)
     # Change the frame ID to "laser"
-    filtered_msg_dict['header']['frame_id'] = 'imu_link' 
+    filtered_msg_dict['header']['frame_id'] = 'imu_frame' 
     return filtered_msg_dict
 
 ## @brief Filter function for transform messages.

@@ -74,5 +74,6 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('joint_state_publisher_enabled')),
         package='joint_state_publisher',
         namespace=LaunchConfiguration('namespace'),
-        executable='joint_state_publisher')
+        executable='joint_state_publisher'
+      )
     ])

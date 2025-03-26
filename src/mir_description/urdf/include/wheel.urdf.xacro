@@ -2,13 +2,13 @@
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
   <xacro:include filename="$(find mir_description)/urdf/include/common_properties.urdf.xacro" />
 
-  <xacro:macro name="actuated_wheel" params="prefix  locationprefix locationright">
-    <joint name="${prefix}${locationprefix}_wheel_joint" type="continuous">
-      <origin xyz="0.0 ${-mir_250_act_wheel_dy * locationright} ${mir_250_act_wheel_radius}" rpy="0 0 0" />
-      <parent link="${prefix}base_link" />
-      <child link="${prefix}${locationprefix}_wheel_link" />
-      <axis xyz="0 1 0" />
-      <limit effort="250" velocity="20.0" />
+  <xacro:macro name="actuated_wheel" params="prefix locationprefix locationright">
+    <joint name="${prefix}${locationprefix}_wheel_joint" type="continuous"> <!-- fixed -->
+      <origin xyz="0.0 ${-mir_250_act_wheel_dy * locationright} ${mir_250_act_wheel_radius}" rpy="0 0 0"/>
+      <parent link="${prefix}base_link"/>
+      <child link="${prefix}${locationprefix}_wheel_link"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="250" velocity="20.0"/>
       <!-- <dynamics damping="0.0" friction="0.0"/> -->
       <!-- <gazebo reference="${prefix}${locationprefix}_wheel_joint">
         <implicitSpringDamper>1</implicitSpringDamper>
