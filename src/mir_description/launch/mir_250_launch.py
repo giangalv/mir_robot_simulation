@@ -66,7 +66,7 @@ def generate_launch_description():
       ),
 
       Node(
-          package='manual_navigation',
+          package='mir_manual_navigation',
           executable='encoder_to_joint_state',
           name='encoder_to_joint_state',
           output='screen',

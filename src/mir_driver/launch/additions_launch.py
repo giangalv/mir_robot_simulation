@@ -74,7 +74,7 @@ def generate_launch_description():
         
         # Include ur cam merger node
         Node(
-            package='manual_navigation',
+            package='mir_manual_navigation',
             executable='cloud_transformation',
             name='cloud_transformation',
         ),
