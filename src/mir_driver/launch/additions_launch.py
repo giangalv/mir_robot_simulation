@@ -54,12 +54,11 @@ def generate_launch_description():
                                   'launch', 'foxglove_bridge_launch.xml')
     
     return LaunchDescription([
-        
-        
+         
         # Declare RViz configuration file argument
         DeclareLaunchArgument(
             'rviz_config_file',
-            default_value=os.path.join(mir_description_dir, 'rviz', 'mir_visu_full.rviz'),
+            default_value=os.path.join(mir_description_dir, 'rviz', 'mir_manual_control.rviz'),
             description='Define RViz config file to be used'
         ),
 
@@ -78,8 +77,6 @@ def generate_launch_description():
             package='manual_navigation',
             executable='cloud_transformation',
             name='cloud_transformation',
-            namespace=LaunchConfiguration('namespace'),
-            parameters=[{'use_sim_time': use_sim_time}]
         ),
 
         # Start RViz2 for visualization

@@ -53,11 +53,6 @@ def generate_launch_description():
         default_value='',
         description='Namespace to push all topics to'),
 
-      DeclareLaunchArgument(
-        'joint_state_publisher_enabled',
-        default_value='true', # before was false
-        description='Enable to publish joint states using joint state publisher'),
-
       OpaqueFunction(function=create_robot_description),
 
       Node(
@@ -71,9 +66,9 @@ def generate_launch_description():
       ),
 
       Node(
-        condition=IfCondition(LaunchConfiguration('joint_state_publisher_enabled')),
-        package='joint_state_publisher',
-        namespace=LaunchConfiguration('namespace'),
-        executable='joint_state_publisher'
+          package='manual_navigation',
+          executable='encoder_to_joint_state',
+          name='encoder_to_joint_state',
+          output='screen',
       )
     ])

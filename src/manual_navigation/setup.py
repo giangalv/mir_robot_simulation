@@ -25,7 +25,8 @@ setup(
     entry_points={
         'console_scripts': [
             'manual_mode = manual_navigation.manual_mode:main',
-            'cloud_transformation = manual_navigation.cloud_transformation:main'
+            'cloud_transformation = manual_navigation.cloud_transformation:main',
+            'encoder_to_joint_state = manual_navigation.encoder_to_joint_state:main'
         ],
     },
 )

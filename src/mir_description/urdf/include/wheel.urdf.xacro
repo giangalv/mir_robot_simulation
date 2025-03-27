@@ -3,7 +3,7 @@
   <xacro:include filename="$(find mir_description)/urdf/include/common_properties.urdf.xacro" />
 
   <xacro:macro name="actuated_wheel" params="prefix locationprefix locationright">
-    <joint name="${prefix}${locationprefix}_wheel_joint" type="continuous"> <!-- fixed -->
+    <joint name="${prefix}${locationprefix}_wheel_joint" type="continuous"> <!--  fixed-->
       <origin xyz="0.0 ${-mir_250_act_wheel_dy * locationright} ${mir_250_act_wheel_radius}" rpy="0 0 0"/>
       <parent link="${prefix}base_link"/>
       <child link="${prefix}${locationprefix}_wheel_link"/>

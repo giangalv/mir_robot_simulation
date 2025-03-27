@@ -18,10 +18,12 @@
 
   <xacro:mir_250 prefix="${prefix}" ns="${ns}"/> 
 
-  <!-- <xacro:mir_ros2_control
+  <!--
+  <xacro:mir_ros2_control
     left_wheel_joint="${prefix}left_wheel_joint"
-    right_wheel_joint="${prefix}right_wheel_joint"/>  -->
+    right_wheel_joint="${prefix}right_wheel_joint"/>  
 
+   
   <ros2_control name="GazeboSystem" type="system">
     <hardware>
       <plugin>gazebo_ros2_control/GazeboSystem</plugin>
@@ -76,7 +78,7 @@
     </joint>
   </ros2_control>
 
-  <!-- 
+  
   <gazebo>
     <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
       <parameters>$(find mir_description)/config/diffdrive_controller.yaml</parameters>

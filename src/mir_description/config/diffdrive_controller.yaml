@@ -10,16 +10,12 @@
 # @brief Controller manager configuration
 controller_manager:
   ros__parameters:
-    update_rate: 30 #41.2 #100 ## @param update_rate Controller update rate in Hz
+    update_rate: 50 #41.2 #100 ## @param update_rate Controller update rate in Hz
     use_sim_time: false ## @param use_sim_time Use simulation time
 
     ## @brief Differential drive controller
     diff_cont:
       type: diff_drive_controller/DiffDriveController
-
-    ## @brief Joint state broadcaster
-    joint_broadcaster:
-      type: joint_state_broadcaster/JointStateBroadcaster
 
     # UR5 joint trajectory controller
     #joint_trajectory_controller:
@@ -38,7 +34,7 @@ diff_cont:
     right_wheel_names : ["right_wheel_joint"] #['${prefix}right_wheel_joint'] #'$(arg prefix)right_wheel_joint'
 
     ## @param publish_rate Rate at which to publish odometry information 
-    publish_rate: 41.2  # this is what the real MiR platform publishes (default: 50)
+    publish_rate: 42 # 41.2  # this is what the real MiR platform publishes (default: 50)
 
     ## @param pose_covariance_diagonal Covariance values for pose estimation, exactly what the real MiR platform publishes
     pose_covariance_diagonal : [0.00001, 0.00001, 1000000.0, 1000000.0, 1000000.0, 1000.0]
@@ -93,9 +89,6 @@ diff_cont:
         max_velocity: 1.5  # rad/s; move_base max_rot_vel: 1.0
         has_acceleration_limits: true
         max_acceleration: 2.5  # rad/s^2; move_base acc_lim_th: 2.0
-
-#joint_broadcaster:
-#  type: position_controllers/JointGroupPositionController
 
 #joint_trajectory_controller:
 #  ros__parameters:
