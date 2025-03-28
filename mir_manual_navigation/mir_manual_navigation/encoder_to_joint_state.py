@@ -15,11 +15,11 @@ class EncoderToJointState(Node):
         )
         self.pub = self.create_publisher(JointState, '/joint_states', 10)
         self.joint_names = ['left_wheel_joint', 'right_wheel_joint']
-        self.ticks_to_rad = (2 * 3.1415926535) / 1000.0  # Adjust for your encoder!
+        self.ticks_to_rad = (2 * 3.1415926535) / 1000.0 # It depends on the Encoder
 
     def encoder_callback(self, msg):
         joint_state = JointState()
-        joint_state.header.stamp = msg.header.stamp  # Or use self.get_clock().now().to_msg()
+        joint_state.header.stamp = msg.header.stamp  
         joint_state.name = self.joint_names
         joint_state.position = [
             msg.encoders.left_wheel * self.ticks_to_rad,

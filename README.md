@@ -1,4 +1,4 @@
-# MIR 250 and UR5e 
+# mir_250_ros2
 This is a ROS2 package for MiR 250 and UR5e series.
 
 # Installation
@@ -43,7 +43,7 @@ You must source the workspace in each terminal you want to work in:
 source ~/ros2_ws/install/setup.bash
 ```
 
-#### Fix time synchronization manually
+# Fix time synchronization manually
 
 * In the Mir dashboard (mir.com in the Mir-Wifi), go to "Service" ->
   "Configuration" -> "System settings" -> "Time settings" -> "Set device time
@@ -51,7 +51,7 @@ source ~/ros2_ws/install/setup.bash
 
 Use **load from device** to sync with the system time!
 
-#### Test the connection is working
+### Test the connection is working
 
 This tests the connection if returning the result from the MIR the 'MIR_IP_ADDR' and
   'MIR_API_KEY' are correct.
@@ -60,7 +60,7 @@ This tests the connection if returning the result from the MIR the 'MIR_IP_ADDR'
   curl -X GET "http://130.251.13.90/api/v2.0.0/status" -H "Authorization: Basic ZGlzdHJpYnV0b3I6NjJmMmYwZjFlZmYxMGQzMTUyYzk1ZjZmMDU5NjU3NmU0ODJiYjhlNDQ4MDY0MzNmNGNmOTI5NzkyODM0YjAxNA=="
 ```
 
-#### **Fix time synchronization using ROS2:**
+### **Fix time synchronization using ROS2:**
 
 From the package `mir_restapi` a node called `mir_restapi_server` can be run, which can execute a time sync REST API call from the driver's host machine to the Mir's host.
 
@@ -103,7 +103,7 @@ Keep in mind, that the time sync causes the mir_bridge to freeze. Therefore onli
 ### rviz:
 ros2 launch mir_description mir_display_launch.py
 ```
-This should work and you are going to see the robot spawned inside the RVIZ2
+This should work and you are going to see the robot spawned in **rviz**.
 
 # Dual Laser Merger
 ## Acknowledgement
@@ -171,43 +171,10 @@ ros2 launch mir_description mir_display_launch.py
           w: -3.957388826986303e-14
   ```
 
-#########################################################################
-# Gazebo demo (mapping)
-
-```bash
-### gazebo:
-ros2 launch mir_gazebo mir_gazebo_launch.py  world:=maze
-
-### mapping (slam_toolbox)
-ros2 launch mir_navigation mapping.py use_sim_time:=true slam_params_file:=$(ros2 pkg prefix mir_navigation)/share/mir_navigation/config/mir_mapping_async_sim.yaml
-
-### navigation (optional)
-ros2 launch mir_navigation navigation.py use_sim_time:=true cmd_vel_w_prefix:=/diff_cont/cmd_vel_unstamped
-```
-
-# Gazebo demo (Navigation with existing map)
-
-```bash
-### gazebo
-ros2 launch mir_gazebo mir_gazebo_launch.py world:=maze rviz_config_file:=$(ros2 pkg prefix mir_navigation)/share/mir_navigation/rviz/mir_nav.rviz
-
-
-### localization (existing map)
-ros2 launch mir_navigation amcl.py use_sim_time:=true map:=$(ros2 pkg prefix mir_navigation)/share/mir_navigation/maps/maze.yaml
-
-### navigation
-ros2 launch mir_navigation navigation.py use_sim_time:=true
-```
-##########################################################################
-
-### Start `move_base` on the robot
-
-* go to "Service" -> "Configuration" -> "Launch menu", start "Planner"; this starts `move_base` and `amcl` on the robot
-
-
+# MOVE THE MIR 250
 ### Teleoperate the robot (optional) via the MIR network interface
 
-* turn the key on the robot in Manual control, go to the MIR network interface, press the *Manual control* button. The *RESUME* button starts to blinking in blue, press it and the led's robot changes from RED in BLUE (the robot state changes from Emergency Stop to Manual Control state). Now you can move the robot via the joystick on the MIR interface.
+* Turn the key on the robot in Manual control, go to the MIR network interface, press the *Manual control* button. The *RESUME* button starts to blinking in blue, press it and the led's robot changes from RED in BLUE (the robot state changes from Emergency Stop to Manual Control state). Now you can move the robot via the joystick on the MIR interface.
 
 
 ### Relocalize robot (optional)
@@ -224,26 +191,38 @@ If the robot's localization is lost:
 ros2 launch mir_driver mir_launch.py
 ```
 
-* The driver automatically launches **rviz** to visualize the topics and sensor
+* The driver automatically launches **rviz2** to visualize the robot description, the topics and sensor
   messages.
-  
-* The driver automatically launches a seperate **teleop** window to manually
-  move the robot using your keyboard. To disable use `teleop_enabled:=false` as
-  a launch argument.
 
-### Mapping on MiR
+### Start the Manual control controller via the keyboard, real joystick and whatever
+
+* Turn the key on the robot in Autonomous control, the *RESUME* button starts to blinking in blue, press it and the led's robot changes from RED in YELLOW (the robot state changes from Emergency Stop to Pause state).
+
+Open a new terminal and launch:
+``` bash
+ros2 launch mir_manual_navigation manual_control_launch.py
+```
+
+* The driver automatically launches the **mir_driver mir_launch.py** to visualize the robot description on rviz2.
+
+* The driver automatically launches a seperate **teleop** window to manually
+  move the robot using your keyboard. And add the possibility to use whatever you want adding to the twist_mux configuration the topics.
+
+# Mapping on MiR
 
 ### Option 1: Launching the modules separately
 
-```bash
+```bash 1
 ### driver:
 ros2 launch mir_driver mir_launch.py
-
+```
+``` bash 2
 ### mapping (slam_toolbox)
 ros2 launch mir_navigation mapping.py slam_params_file:=$(ros2 pkg prefix mir_navigation)/share/mir_navigation/config/mir_mapping_async.yaml
-
+```
+``` bash 3
 ### navigation (optional)
-ros2 launch mir_navigation navigation.py
+ros2 launch mir_manual_navigation manual_control_launch.py
 ```
 
 ### Option 2: Use combined launch file
@@ -253,7 +232,7 @@ ros2 launch mir_navigation navigation.py
 ros2 launch mir_navigation mir_mapping_launch.py
 ```
 
-### Navigation on MiR
+# Navigation on MiR
 
 ### Option 1: Launching the modules separately
 
@@ -265,7 +244,7 @@ ros2 launch mir_driver mir_launch.py
 ros2 launch mir_navigation amcl.py use_sim_time:=false map:={path to existing map}
 
 ### navigation
-ros2 launch mir_navigation navigation.py use_sim_time:=false
+ros2 launch mi navigation.py use_sim_time:=false
 ```
 
 ### Option 2: Use combined launch file
@@ -377,5 +356,36 @@ were already in the DONE state". This is caused by a race condition between the
 `/move_base/result` and `/move_base/status` topics. When a status message with
 status `SUCCEEDED` arrives before the corresponding result message, this
 warning will be printed. It can be safely ignored. -->
+
+
+#########################################################################
+# Gazebo demo (mapping)
+
+```bash
+### gazebo:
+ros2 launch mir_gazebo mir_gazebo_launch.py  world:=maze
+
+### mapping (slam_toolbox)
+ros2 launch mir_navigation mapping.py use_sim_time:=true slam_params_file:=$(ros2 pkg prefix mir_navigation)/share/mir_navigation/config/mir_mapping_async_sim.yaml
+
+### navigation (optional)
+ros2 launch mir_navigation navigation.py use_sim_time:=true cmd_vel_w_prefix:=/diff_cont/cmd_vel_unstamped
+```
+
+# Gazebo demo (Navigation with existing map)
+
+```bash
+### gazebo
+ros2 launch mir_gazebo mir_gazebo_launch.py world:=maze rviz_config_file:=$(ros2 pkg prefix mir_navigation)/share/mir_navigation/rviz/mir_nav.rviz
+
+
+### localization (existing map)
+ros2 launch mir_navigation amcl.py use_sim_time:=true map:=$(ros2 pkg prefix mir_navigation)/share/mir_navigation/maps/maze.yaml
+
+### navigation
+ros2 launch mir_navigation navigation.py use_sim_time:=true
+```
+##########################################################################
+
 
 
