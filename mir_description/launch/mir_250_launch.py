@@ -23,7 +23,6 @@ def generate_launch_description():
     @return LaunchDescription object containing all the nodes and parameters.
     """
 
-    use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     mir_description_dir = get_package_share_directory('mir_description')
 
     def create_robot_description(context):
@@ -41,21 +40,21 @@ def generate_launch_description():
         robot_desc = doc.toprettyxml(indent='  ')
         return [SetLaunchConfiguration('robot_description', robot_desc)]
 
-    return LaunchDescription([
+    use_sim_time_standard = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation time if true'
+    )
 
-      DeclareLaunchArgument(
-        'prefix',
-        default_value='',
-        description='Robot prefix'),
+    use_sim_time = LaunchConfiguration('use_sim_time') 
 
-      DeclareLaunchArgument(
+    standard_namespace = DeclareLaunchArgument(
         'namespace',
         default_value='',
-        description='Namespace to push all topics to'),
+        description='Robot namespace to use'
+    )
 
-      OpaqueFunction(function=create_robot_description),
-
-      Node(
+    robot_state_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
         name='robot_state_publisher',
@@ -63,12 +62,19 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time,
                     'robot_description': LaunchConfiguration('robot_description')}],
         namespace=LaunchConfiguration('namespace'),
-      ),
+    )
 
-      Node(
+    joint_state_node = Node(
           package='mir_manual_navigation',
           executable='encoder_to_joint_state',
           name='encoder_to_joint_state',
           output='screen',
-      )
+    )
+
+    return LaunchDescription([
+      use_sim_time_standard,
+      standard_namespace,
+      OpaqueFunction(function=create_robot_description),
+      robot_state_node,
+      joint_state_node      
     ])

@@ -47,67 +47,57 @@ def generate_launch_description():
 
     mir_description_dir = get_package_share_directory('mir_description')
 
-    return LaunchDescription([
-
-        DeclareLaunchArgument(
-            'namespace',
-            default_value='',
-            description='Namespace to push all topics into.'),
-
-        DeclareLaunchArgument(
-            'use_sim_time',
-            default_value='false',
-            description=''),
-
-        DeclareLaunchArgument(
-            'mir_hostname',
-            default_value='130.251.13.90',
-            description=''),
-
-        DeclareLaunchArgument(
-             'disable_map',
-             default_value='false',
-             description='Disable the map topic and map -> odom_comb TF transform from the MiR'),
-
-        DeclareLaunchArgument(
-            'robot_state_publisher_enabled',
-            default_value='true',
-            description='Set to true to publish tf using mir_description'),
-
-        # Mir bridge node
-        Node(
-            package='mir_driver',
-            executable='mir_bridge',
-            parameters=[{
-                'use_sim_time': LaunchConfiguration('use_sim_time'),
-                'tf_prefix': LaunchConfiguration('namespace')}],
-            namespace=LaunchConfiguration('namespace'),
-            output='screen'),
-
-        # Twist stamper node for cmd_vel topic from MiR (used for teleop)
-        Node(
-            package='twist_stamper',
-            executable='twist_stamper',
-            name='twist_stamper_cmd_vel_mir',
-            parameters=[{
-                'use_sim_time': LaunchConfiguration('use_sim_time'),
-                'frame_id': ''}], #empty frame_id
-                #'frame_id': '1955'}], #last update
-            remappings=[
-                ('cmd_vel_in', 'cmd_vel_out'),
-                ('cmd_vel_out', 'cmd_vel_stamped'),],
-            namespace=LaunchConfiguration('namespace'),
-        ),
-
-        # Include MiR description launch file
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(mir_description_dir, 'launch', 'mir_250_launch.py')),
-            launch_arguments={
-                'joint_state_publisher_enabled': 'true', # was false
-                'namespace': LaunchConfiguration('namespace')
-            }.items(),
-            condition=IfCondition(LaunchConfiguration(
-                'robot_state_publisher_enabled'))
+    robot_displays_launcher = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(mir_description_dir, 'launch', 'mir_250_launch.py')
         )
+    )
+
+    use_sim_time_standard = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation time if true'
+    )
+
+    use_sim_time = LaunchConfiguration('use_sim_time') 
+
+    name_standard = DeclareLaunchArgument(
+        'namespace',
+        default_value='',
+        description='Namespace to push all topics into.'
+    )
+
+    name_space = LaunchConfiguration('namespace')
+
+    mir_launcher = Node(
+        package='mir_driver',
+        executable='mir_bridge',
+        parameters=[{
+            'use_sim_time': use_sim_time,
+            'tf_prefix': name_space
+        }],
+        namespace=LaunchConfiguration('namespace'),
+        output='screen'
+    )
+
+    twister_launcher = Node(
+        package='twist_stamper',
+        executable='twist_stamper',
+        name='twist_stamper_cmd_vel_mir',
+        parameters=[{
+            'use_sim_time': use_sim_time,
+            'frame_id': '' #empty frame_id
+        }], 
+        remappings=[
+            ('cmd_vel_in', 'cmd_vel_out'),
+            ('cmd_vel_out', 'cmd_vel_stamped'),],
+        namespace=LaunchConfiguration('namespace'),
+    )
+
+    return LaunchDescription([
+        use_sim_time_standard,
+        name_standard,
+        mir_launcher,
+        twister_launcher,       
+        robot_displays_launcher
     ])

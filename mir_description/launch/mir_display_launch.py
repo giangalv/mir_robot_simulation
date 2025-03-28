@@ -24,29 +24,44 @@ def generate_launch_description():
 
     mir_description_dir = get_package_share_directory('mir_description')
     rviz_config_file = os.path.join(
-    mir_description_dir, 'rviz', 'mir_description.rviz')
-    use_sim_time = LaunchConfiguration('use_sim_time', default=True)
+        mir_description_dir, 'rviz', 'mir_description.rviz')
+
+    use_sim_time_standard = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation time if true'
+    )
+
+    use_sim_time = LaunchConfiguration('use_sim_time') 
+
+    joint_state_standard = DeclareLaunchArgument(
+        'joint_state_publisher_enabled',
+        default_value='true',
+        description='Enable to publish joint states using joint state publisher'
+    )
+
+    joint_state = LaunchConfiguration('joint_state_publisher_enabled')
+
+    robot_displays_launcher = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(mir_description_dir, 'launch', 'mir_250_launch.py')
+        ),
+        launch_arguments={'joint_state_publisher_enabled': joint_state}.items()
+    )
+
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        arguments=['-d', rviz_config_file],
+        parameters=[{'use_sim_time': use_sim_time}],
+    )
+
+    # ros2 launch mir_description mir_display_launch.py use_sim_time:=true joint_state_publisher_enabled:=true 
+    # Used to change the default values.
 
     return LaunchDescription([
-
-        DeclareLaunchArgument(
-            'joint_state_publisher_enabled',
-            default_value='true',
-            description='Enable to publish joint states using joint state publisher'),
-
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(mir_description_dir, 'launch', 'mir_250_launch.py')),
-            launch_arguments={
-                'joint_state_publisher_enabled':
-                LaunchConfiguration('joint_state_publisher_enabled'),
-            }.items()
-        ),
-
-        Node(
-            package='rviz2',
-            executable='rviz2',
-            arguments=['-d', rviz_config_file],
-            parameters=[{'use_sim_time': use_sim_time}],
-        )
+        use_sim_time_standard,
+        joint_state_standard,
+        robot_displays_launcher,
+        rviz_node   
     ])
