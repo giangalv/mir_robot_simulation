@@ -31,9 +31,8 @@ import os
 
 from launch_ros.actions import Node
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
@@ -45,7 +44,6 @@ def generate_launch_description():
     
     namespace = LaunchConfiguration('namespace')
     manual_navigation_path = get_package_share_directory('mir_manual_navigation')
-    mir_driver_dir = get_package_share_directory('mir_driver')
 
     # Define paths to configuration files
     twist_config = os.path.join(
@@ -72,11 +70,6 @@ def generate_launch_description():
             name='namespace',
             default_value='',
             description='Namespace for launched nodes'
-        ),
-
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(mir_driver_dir, 'launch', 'mir_launch.py'))
         ),
         
         # Twist multiplexer node with source prioritization

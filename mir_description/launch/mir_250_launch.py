@@ -45,7 +45,6 @@ def generate_launch_description():
         default_value='false',
         description='Use simulation time if true'
     )
-
     use_sim_time = LaunchConfiguration('use_sim_time') 
 
     standard_namespace = DeclareLaunchArgument(
@@ -70,6 +69,7 @@ def generate_launch_description():
           name='encoder_to_joint_state',
           output='screen',
     )
+
 
     return LaunchDescription([
       use_sim_time_standard,

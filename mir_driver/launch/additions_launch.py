@@ -47,49 +47,64 @@ def generate_launch_description():
     scan_merger_dir = get_package_share_directory('dual_laser_merger')
     
     # Define launch configurations
-    use_sim_time = LaunchConfiguration('use_sim_time', default=False)
+    use_sim_time_standard = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation time if true'
+    )
+    use_sim_time = LaunchConfiguration('use_sim_time') 
+
+    rviz_config_file_standard = DeclareLaunchArgument(
+        'rviz_config_file',
+        default_value=os.path.join(mir_description_dir, 'rviz', 'mir_manual_control.rviz'),
+        description='Define RViz config file to be used'
+    )
     rviz_config_file = LaunchConfiguration('rviz_config_file')
 
-    foxglove_launch = os.path.join(get_package_share_directory('foxglove_bridge'), 
+    standard_namespace = DeclareLaunchArgument(
+        'namespace',
+        default_value='',
+        description='Robot namespace to use'
+    )
+    name_space = LaunchConfiguration('namespace')
+
+    laser_merger_launcher = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(scan_merger_dir, 'launch', 'demo_laser_merger.launch.py')),
+        launch_arguments={
+            'namespace': name_space,
+            'use_sim_time': use_sim_time
+        }.items()
+    )
+
+    cloud_merger_launcher = Node(
+        package='mir_manual_navigation',
+        executable='cloud_transformation',
+        name='cloud_transformation',
+    )
+
+    rviz_launcher = Node(
+        package='rviz2',
+        executable='rviz2',
+        output={'both': 'log'},
+        parameters=[{'use_sim_time': use_sim_time}],
+        arguments=['-d', rviz_config_file]
+    )
+
+    foxglove_path = os.path.join(get_package_share_directory('foxglove_bridge'), 
                                   'launch', 'foxglove_bridge_launch.xml')
     
+    foxglove_launcher = IncludeLaunchDescription(
+        FrontendLaunchDescriptionSource(foxglove_path)
+    )
+    
+
     return LaunchDescription([
-         
-        # Declare RViz configuration file argument
-        DeclareLaunchArgument(
-            'rviz_config_file',
-            default_value=os.path.join(mir_description_dir, 'rviz', 'mir_manual_control.rviz'),
-            description='Define RViz config file to be used'
-        ),
-
-        # Include laser scan merger launch file
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(scan_merger_dir, 'launch', 'demo_laser_merger.launch.py')),
-            launch_arguments={
-                'namespace': LaunchConfiguration('namespace'),
-                'use_sim_time': LaunchConfiguration('use_sim_time')
-            }.items()
-        ),
-        
-        # Include ur cam merger node
-        Node(
-            package='mir_manual_navigation',
-            executable='cloud_transformation',
-            name='cloud_transformation',
-        ),
-
-        # Start RViz2 for visualization
-        Node(
-            package='rviz2',
-            executable='rviz2',
-            output={'both': 'log'},
-            parameters=[{'use_sim_time': use_sim_time}],
-            arguments=['-d', rviz_config_file]
-        ),
-
-        #Foxglove for visualization 
-        #IncludeLaunchDescription(
-        #    FrontendLaunchDescriptionSource(foxglove_launch)
-        #),
+        use_sim_time_standard,
+        rviz_config_file_standard,
+        standard_namespace,
+        laser_merger_launcher,
+        cloud_merger_launcher,
+        rviz_launcher,
+        #foxglove_launcher,
     ])

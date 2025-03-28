@@ -185,7 +185,7 @@ If the robot's localization is lost:
 * click "Adjust"
 
 
-### Start the ROS driver
+## Start the ROS driver
 
 ```bash
 ros2 launch mir_driver mir_launch.py
@@ -194,7 +194,7 @@ ros2 launch mir_driver mir_launch.py
 * The driver automatically launches **rviz2** to visualize the robot description, the topics and sensor
   messages.
 
-### Start the Manual control controller via the keyboard, real joystick and whatever
+## Start the Manual control controller via the keyboard, real joystick and whatever
 
 * Turn the key on the robot in Autonomous control, the *RESUME* button starts to blinking in blue, press it and the led's robot changes from RED in YELLOW (the robot state changes from Emergency Stop to Pause state).
 
@@ -203,10 +203,12 @@ Open a new terminal and launch:
 ros2 launch mir_manual_navigation manual_control_launch.py
 ```
 
-* The driver automatically launches the **mir_driver mir_launch.py** to visualize the robot description on rviz2.
+* Before launcing the manual_control_launch command be sure to have the mir_launch command run.
 
-* The driver automatically launches a seperate **teleop** window to manually
-  move the robot using your keyboard. And add the possibility to use whatever you want adding to the twist_mux configuration the topics.
+* The driver automatically launches a seperate **teleop** window to manually move the robot using your keyboard. And add the possibility to use whatever you want adding to the twist_mux configuration the topics.
+
+### NB
+For ending the programs in order to complete correctly: Close with Ctrl+c the manual control launch terminal and then the mir launch terminal.
 
 # Mapping on MiR
 
