@@ -229,14 +229,14 @@ class MirRestAPI:
         }
         return self.http.put("/status", json.dumps(ready_status))
     
-# To be fixed and tested
+    # To be fixed and tested
     def set_mapping_mode(self):
         map_mode = {
             "mode_id": 3,
             "web_session_id": "mapping"
         }
         return self.http.put("/status", json.dumps(map_mode))
-# To be fixed and tested
+    # To be fixed and tested
     def set_mission_mode(self):
         mission_mode = {
             "mode_id": 7,

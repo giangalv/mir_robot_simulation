@@ -85,8 +85,14 @@ class PointCloudSubscriber(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = PointCloudSubscriber()
-    rclpy.spin(node)
-    rclpy.shutdown()
+    try:        
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt received. Shutting down.")
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
+        print("POINTCLOUD_SUBSCRIBER shutdown complete.")
 
 if __name__ == '__main__':
     main()

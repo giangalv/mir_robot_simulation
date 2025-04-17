@@ -84,8 +84,8 @@ namespace merger_node
     laser_2_yaw_offset = this->declare_parameter("laser_2_yaw_offset", 0.0); //# Yaw offset of laser 2 from the target frame
 
     //# Merger operation parameters
-    tolerance_param = this->declare_parameter("tolerance", 0.05); //# Time tolerance for synchronizing laser scans
-    input_queue_size_param = this->declare_parameter("queue_size", 5); //# Size of the message queue for synchronization
+    tolerance_param = this->declare_parameter("tolerance", 0.2); //# Time tolerance for synchronizing laser scans
+    input_queue_size_param = this->declare_parameter("queue_size", 30); //# Size of the message queue for synchronization
     angle_increment_param = this->declare_parameter("angle_increment", 0.0029088794253766537); //# Angular distance between measurements [rad]
     scan_time_param = this->declare_parameter("scan_time", 0.000014); //# Time between measurements [s]
     min_height_param = this->declare_parameter("min_height", 0.0); //# Minimum height to consider for merging [m] (negative value means no height constraint)
@@ -125,7 +125,7 @@ namespace merger_node
         RCLCPP_WARN(this->get_logger(), "AVERAGE FILTER enabled.");
         lidar_1_avg = *lidar_1_msg;
         lidar_2_avg = *lidar_2_msg;
-        for(size_t i = 0; i <= lidar_1_msg->ranges.size(); i++) {
+        for(size_t i = 0; i <= lidar_1_msg->ranges.size(); i++) { // < or <= ?
           if(i == 0) {
             lidar_1_avg.ranges[i] = (lidar_1_msg->ranges[lidar_1_msg->ranges.size() - 1] +
               lidar_1_msg->ranges[i] + lidar_1_msg->ranges[i + 1]) / 3;
@@ -137,7 +137,7 @@ namespace merger_node
               lidar_1_msg->ranges[i + 1]) / 3;
           }
         }
-        for(size_t i = 0; i <= lidar_2_msg->ranges.size(); i++) {
+        for(size_t i = 0; i <= lidar_2_msg->ranges.size(); i++) { // < or <= ?
           if(i == 0) {
             lidar_2_avg.ranges[i] = (lidar_2_msg->ranges[lidar_2_msg->ranges.size() - 1] +
               lidar_2_msg->ranges[i] + lidar_2_msg->ranges[i + 1]) / 3;
@@ -284,6 +284,12 @@ namespace merger_node
           merged.ranges[index] = range;
         }
       }
+
+      /*
+      RCLCPP_INFO(this->get_logger(), "Lidar1 stamp: %.9f, Lidar2 stamp: %.9f",
+            rclcpp::Time(lidar_1_msg->header.stamp).seconds(),
+            rclcpp::Time(lidar_2_msg->header.stamp).seconds());
+      */
       merged_scan_pub->publish(merged);
     }
   }

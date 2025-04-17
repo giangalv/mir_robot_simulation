@@ -38,9 +38,15 @@ class TFStaticRepublisher(Node):
 def main():
     rclpy.init()
     node = TFStaticRepublisher()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:     
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt received. Shutting down.")
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
+        print("TF_STATIC_REPUBLISHER shutdown complete.")
+
 
 if __name__ == '__main__':
     main()

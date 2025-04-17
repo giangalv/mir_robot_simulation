@@ -353,8 +353,11 @@ PUB_TOPICS = [
     TopicConfig('tf_static', TFMessage, dict_filter=_tf_dict_filter, topic_renamed='/tf_static_starter'), # WORKING 
     TopicConfig('MC/encoders', StampedEncoders, dict_filter=_header_dict_filter), # WORKING
 
+    # TopicConfig('light_cmd', String), 
 
-    #TopicConfig('initialpose', PoseWithCovarianceStamped, dict_filter=_initialpose_dict_filter), NOT WORK Qos problem
+    #TopicConfig('PB/proximity', Proximity),
+
+    # TopicConfig('initialpose', PoseWithCovarianceStamped, dict_filter=_initialpose_dict_filter), NOT WORK Qos problem
     # TopicConfig('amcl_pose', mir_msgs.msg.LocalizationPose),
 
     # TopicConfig('MissionController/prompt_user', UserPrompt),
@@ -368,8 +371,8 @@ PUB_TOPICS = [
     # TopicConfig('PB/gpio/stop_button', String),
     # TopicConfig('PB/motor_status', mir_msgs.msg.PowerBoardMotorStatus),
     # TopicConfig('PB/pallet_lifter_status', mir_msgs.msg.PalletLifterStatus),
-    #TopicConfig('PB/pendant', Pendant),
-    #TopicConfig('PB/proximity', Proximity),
+    # TopicConfig('PB/pendant', Pendant),
+    
 
     # TopicConfig('SickPLC/safety_sensor_data', mir_sensor_interfaces.msg.SafetySensorDataList),
     # TopicConfig('active_mapping_guid', std_msgs.msg.String),
@@ -412,7 +415,7 @@ PUB_TOPICS = [
     # TopicConfig('lifecycle/camera_floor_right/driver/status', life_cycle_mgmt_interfaces.msg.UpgradeStatus),
     # TopicConfig('lifecycle/embedded/status', life_cycle_mgmt_interfaces.msg.UpgradeStatus),
 
-    # TopicConfig('light_cmd', String),
+    
     # TopicConfig('localization_score', Float64),
     # TopicConfig('map', OccupancyGrid),
     # TopicConfig('map_metadata', MapMetaData),
@@ -580,14 +583,37 @@ class PublisherWrapper(object):
     ## Callback method for handling incoming messages.
     #  @param msg_dict Dictionary containing the message data.
     def callback(self, msg_dict):
-        if not isinstance(msg_dict, dict):   # can happen during recursion
+        if not isinstance(msg_dict, dict):  # Defensive guard for recursion
             return
+
         msg_dict = _prepend_tf_prefix_dict_filter(msg_dict)
+
         if self.topic_config.dict_filter is not None:
             msg_dict = self.topic_config.dict_filter(msg_dict, to_ros2=True)
-        msg = message_converter.convert_dictionary_to_ros_message(
-            self.topic_config.topic_type, msg_dict)
-        self.pub.publish(msg)
+
+        try:
+            msg = message_converter.convert_dictionary_to_ros_message(
+                self.topic_config.topic_type, msg_dict
+            )
+            self.pub.publish(msg)
+
+        except rclpy.exceptions.ROSInterruptException:
+            # ROS shutdown in progress
+            pass
+
+        except RuntimeError as e:
+            if "destruction was requested" in str(e):
+                # Publisher was destroyed during shutdown
+                pass
+            else:
+                self.node_handle.get_logger().warn(
+                    f"RuntimeError while publishing on topic '{self.topic_config.topic_ros2_name}': {e}"
+                )
+
+        except Exception as e:
+            self.node_handle.get_logger().warn(
+                f"Error while publishing on topic '{self.topic_config.topic_ros2_name}': {e}"
+            )
 
 ## @class SubscriberWrapper
 #  @brief A wrapper class for handling the subscription of topics from ROS2.
@@ -653,11 +679,15 @@ class MiR250BridgeNode(Node):
         i = 1
         while not self.robot.is_connected():
             if not rclpy.ok():
-                sys.exit(0)
+                #sys.exit(0)
+                self.get_logger().info("ROS shutdown detected during connection wait.")
+                return
             if self.robot.is_errored():
                 self.get_logger().fatal('Connection eMiR250BridgeNode to %s:%i, giving up!'
                                         % (hostname, port))
-                sys.exit(-1)
+                #sys.exit(-1)
+                rclpy.shutdown()
+                return
             if i % 10 == 0:
                 self.get_logger().warn('Still waiting for connection to %s:%i...'
                                        % (hostname, port))
@@ -666,6 +696,7 @@ class MiR250BridgeNode(Node):
         self.get_logger().info('Connected to %s:%i...' % (hostname, port))
 
         topics = self.get_topics()
+        
         published_topics = [topic_name for (topic_name, _, has_publishers, _)
                             in topics if has_publishers]
         subscribed_topics = [topic_name for (topic_name, _, _, has_subscribers)
@@ -682,7 +713,7 @@ class MiR250BridgeNode(Node):
             if ('/' + sub_topic.topic) not in subscribed_topics:
                 self.get_logger().warn(
                     "Topic '%s' is NOT yet subscribed to by the MiR!" % sub_topic.topic)
-
+        
         self.mir_bridge_ready = True
 
     ## Method to retrieve topics from the MiR robot.
@@ -741,9 +772,14 @@ class MiR250BridgeNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = MiR250BridgeNode()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:    
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt received. Shutting down.")
+    finally:
+        node.destroy_node()    
+        rclpy.try_shutdown()
+        print("MIR_BRIDGE shutdown complete.")
 
 
 if __name__ == '__main__':

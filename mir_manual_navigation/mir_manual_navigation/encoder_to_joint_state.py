@@ -30,9 +30,14 @@ class EncoderToJointState(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = EncoderToJointState()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt received. Shutting down.")
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown() 
+        print("ENCODER_TO_JOINT_STATE shutdown complete.")
 
 if __name__ == '__main__':
     main()

@@ -77,14 +77,6 @@
       <material>Gazebo/Grey</material>
     </gazebo>
 
-    <!--
-    <link name="${prefix}odom"/>
-    <joint name="${prefix}odom_joint" type="fixed">
-      <parent link="${prefix}odom"/>
-      <child link="${prefix}base_footprint"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint> -->
-
     <!-- IMU -->
     <joint name="${prefix}base_link_to_imu_joint" type="fixed">
       <parent link="${prefix}base_link" />
