@@ -139,6 +139,10 @@ class RosbridgeSetup():
     def is_errored(self):
         return self.connection.errored
 
+    ## Gracefully shut down the connection to the ROS bridge.
+    def closing(self):
+        self.connection.close_()
+
     ## Handle incoming messages from the ROS bridge.
     #  @param message The message received from the ROS bridge.
     def onMessageReceived(self, message):
@@ -206,7 +210,7 @@ class RosbridgeWSConnection():
     ## Handle the WebSocket connection opening.
     #  @param ws The WebSocket object.
     def on_open(self, ws):
-        print("### ROS bridge connected ###")
+        print("### ROS bridge already connected ###")
         self.connected = True
 
     ## Send a string message over the WebSocket connection.
@@ -229,6 +233,11 @@ class RosbridgeWSConnection():
     #  @param ws The WebSocket object.
     def on_close(self, ws):
         self.connected = False
+        print("ROS bridge closed")
+    
+    ## Close the WebSocket connection gracefully.
+    def close_(self):
+        self.ws.close()
         print("### ROS bridge closed ###")
 
     ## Run the WebSocket connection in a separate thread.

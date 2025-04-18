@@ -765,21 +765,27 @@ class MiR250BridgeNode(Node):
         return response
     
     def destroy_node(self):
-        self.get_logger().info('Shutting down...')
+        self.robot.closing()
         super().destroy_node()
+
 
 ## Main function to initialize and run the MiR250BridgeNode.
 def main(args=None):
     rclpy.init(args=args)
     node = MiR250BridgeNode()
-    try:    
+    node.get_logger().info("╔═══════════════════════════════╗")
+    node.get_logger().info("║    MiR Bridge Node STARTED    ║")
+    node.get_logger().info("╚═══════════════════════════════╝")
+
+    try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        print("KeyboardInterrupt received. Shutting down.")
+        print("╔═══════════════════════════════╗")
+        print("║ MiR Bridge Node SHUTTING DOWN ║")
+        print("╚═══════════════════════════════╝")
     finally:
-        node.destroy_node()    
+        node.destroy_node()
         rclpy.try_shutdown()
-        print("MIR_BRIDGE shutdown complete.")
 
 
 if __name__ == '__main__':
