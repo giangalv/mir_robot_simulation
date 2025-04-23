@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import numpy as np
 import rclpy
 from rclpy.node import Node
@@ -92,7 +94,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.try_shutdown()
-        print("POINTCLOUD_SUBSCRIBER shutdown complete.")
+
 
 if __name__ == '__main__':
     main()

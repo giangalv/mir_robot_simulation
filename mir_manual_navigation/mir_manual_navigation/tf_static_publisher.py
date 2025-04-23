@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
 from tf2_msgs.msg import TFMessage
@@ -45,7 +47,6 @@ def main():
     finally:
         node.destroy_node()
         rclpy.try_shutdown()
-        print("TF_STATIC_REPUBLISHER shutdown complete.")
 
 
 if __name__ == '__main__':

@@ -123,8 +123,7 @@ class MirRestAPIServer(Node):
         self.create_service(Trigger, 'mir_set_ready_control', self.set_ready_control_callback)
         self.get_logger().info("Listening on 'mir_set_ready_control'")
 
-        self.create_service(Trigger, 'mir_set_mapping_mode', self.set_mapping_mode_callback)
-        self.get_logger().info("Listening on 'mir_set_mapping_mode'")
+        
 
     def test_api_connection(self):
         """
@@ -132,6 +131,7 @@ class MirRestAPIServer(Node):
         @return -1 if API handle is None, 0 if connection failed, 1 if connection successful
         """
         if self.api_handle is None:
+            self.get_logger().warn("API handle is None in test_api_connection")
             return -1
 
         self.get_logger().info('REST API: Waiting for connection')
@@ -158,32 +158,33 @@ class MirRestAPIServer(Node):
         return response
 
     def call_restapi_function(self, service_fct, request, response, args=None):
-        """
-        @brief Calls a MiR REST API function and sets the response accordingly
-        @param service_fct The MiR REST API function to call
-        @param request The request object
-        @param response The response object to modify
-        @param args Optional arguments for the service function
-        @return The modified response object
-        """
         if self.test_api_connection() == -1:
             response = self.reponse_api_handle_not_exists(response)
             return response
+
         if self.api_handle.is_connected(print=False):
-            if args is None:
-                response.message = str(service_fct())
-            else:
-                response.message = str(service_fct(args))
-            if "Error" in response.message:
+            try:
+                if args is None:
+                    result = service_fct()
+                else:
+                    result = service_fct(args)
+                response.message = str(result)
+                self.get_logger().info(f"API call result: {response.message}")
+                if "Error" in response.message:
+                    response.success = False
+                else:
+                    response.success = True
+            except Exception as e:
                 response.success = False
-            else:
-                response.success = True
+                response.message = f"Exception occurred: {str(e)}"
+                self.get_logger().error(response.message)
             return response
         else:
             response.success = False
             response.message = "ERROR: Couldn't connect to REST API"
-        self.get_logger().error(response.message)
-        return response
+            self.get_logger().error(f"{response.message} - Host: {self.api_handle.hostname}")
+            return response
+
     
     def set_manual_control_callback(self, request, response):
         """
@@ -217,12 +218,6 @@ class MirRestAPIServer(Node):
         self.get_logger().info('Setting ready control mode...')
         response = self.call_restapi_function(self.api_handle.set_ready_control, request, response)
         return response
-    
-    def set_mapping_mode_callback(self, request,response):
-        
-        self.get_logger().info('Setting mapping mode...')
-        response = self.call_restapi_function(self.api_handle.set_mapping_mode, request, response)
-        return response
         
     def sync_time_callback(self, request, response):
         """
@@ -243,6 +238,7 @@ class MirRestAPIServer(Node):
         @return The modified response object
         """
         self.get_logger().info('Getting status from REST API...')
+        response = Trigger.Response()
         response = self.call_restapi_function(self.api_handle.get_status, request, response)
         return response
 

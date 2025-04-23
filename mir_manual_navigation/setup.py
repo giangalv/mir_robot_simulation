@@ -29,6 +29,7 @@ setup(
             'encoder_to_joint_state = mir_manual_navigation.encoder_to_joint_state:main',
             'tf_static_publisher = mir_manual_navigation.tf_static_publisher:main',
             'initial_position = mir_manual_navigation.initial_position:main',
+            'mir_control_node = mir_manual_navigation.mir_controller_restapi:main',
         ],
     },
 )

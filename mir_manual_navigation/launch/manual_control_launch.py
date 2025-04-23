@@ -107,6 +107,16 @@ def generate_launch_description():
         namespace=namespace,
     )
 
+    controller_node = Node(
+        package='mir_manual_navigation',
+        executable='mir_control_node',
+        name='mir_control_node',
+        parameters=[{'use_sim_time': use_sim_time}],
+        namespace=namespace,
+        #prefix='xterm -e',
+        output='screen',
+    )
+
     return LaunchDescription([
         declare_namespace,
         declare_use_sim_time,
@@ -114,5 +124,6 @@ def generate_launch_description():
         keyboard_teleop_node,
         joy_node,
         twist_joy_node,
-        manual_mode_node,
+        #manual_mode_node,
+        controller_node,
     ])

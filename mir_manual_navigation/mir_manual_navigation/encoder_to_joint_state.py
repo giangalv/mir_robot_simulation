@@ -37,7 +37,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.try_shutdown() 
-        print("ENCODER_TO_JOINT_STATE shutdown complete.")
+
 
 if __name__ == '__main__':
     main()

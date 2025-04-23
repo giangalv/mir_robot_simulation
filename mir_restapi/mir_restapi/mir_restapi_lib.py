@@ -60,7 +60,7 @@ class HttpConnection:
             self.connection.connect()
         self.connection.request("GET", self.api_prefix + path, headers=self.http_headers)
         resp = self.connection.getresponse()
-        if resp.status < 200 or resp.status >= 300:
+        if resp.status < 200 or resp.status >= 410:
             self.logger.warn("GET failed with status {} and reason: {}".format(resp.status, resp.reason))
         return resp
 
@@ -87,7 +87,7 @@ class HttpConnection:
         self.connection.request("PUT", self.api_prefix + path, body=body, headers=self.http_headers)
         resp = self.connection.getresponse()
         # self.logger.info(resp.read())
-        if resp.status < 200 or resp.status >= 300:
+        if resp.status < 200 or resp.status >= 404:
             self.logger.warn("POST failed with status {} and reason: {}".format(resp.status, resp.reason))
         return json.loads(resp.read())
 
@@ -117,10 +117,10 @@ class MirRestAPI:
         self.logger = logger
         if hostname is not None:
             address = hostname + ":80"
-            print("REST API: Connecting to " + address)
+            #print("REST API: Connecting to " + address)
         else:
             address="130.251.13.90:80"
-            print("REST API: Connecting to default address " + address)
+            #print("REST API: Connecting to default address " + address)
         self.http = HttpConnection(logger, address, auth, "/api/v2.0.0")
 
     def close(self):
@@ -180,8 +180,14 @@ class MirRestAPI:
         @brief Get the current status of the MiR robot
         @return dict Status information from the robot
         """
-        response = self.http.get("/status")
-        return json.loads(response.read())
+        resp = self.http.get("/status")
+        try:
+            body = resp.read()
+            return json.loads(body)
+        except Exception as e:
+            self.logger.error(f"Failed to parse /status response: {str(e)}")
+            return {"error": str(e)}
+
 
     def get_state_id(self):
         """
