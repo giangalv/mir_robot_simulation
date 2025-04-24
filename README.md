@@ -9,7 +9,6 @@ If you haven't already installed [ROS2](https://docs.ros.org/en/humble/Installat
 
 
 ## Source install
-
 ```bash
 # create a ros2 workspace
 mkdir -p ~/ros2_ws/src
@@ -44,7 +43,6 @@ source ~/ros2_ws/install/setup.bash
 ```
 
 # Fix time synchronization manually
-
 * In the Mir dashboard (mir.com in the Mir-Wifi), go to "Service" ->
   "Configuration" -> "System settings" -> "Time settings" -> "Set device time
   on robot"
@@ -61,7 +59,6 @@ This tests the connection if returning the result from the MIR the 'MIR_IP_ADDR'
 ```
 
 ### **Fix time synchronization using ROS2:**
-
 From the package `mir_restapi` a node called `mir_restapi_server` can be run, which can execute a time sync REST API call from the driver's host machine to the Mir's host.
 
 * Launch the sh file with the API key and mir hostname's IP address changed
@@ -94,14 +91,11 @@ ros2 service call /mir_sync_time std_srvs/Trigger
  
 ```
 
-
 #### **After time sync**
-
 Keep in mind, that the time sync causes the mir_bridge to freeze. Therefore online time syncs are not recommended.
 
 
 # RVIZ demo test
-
 ```bash
 ### rviz:
 ros2 launch mir_description mir_display_launch.py
@@ -113,14 +107,13 @@ This should work and you are going to see the robot spawned in **rviz**.
 The 3d files for MiR 250 are from [DFKI](https://github.com/DFKI-NI/mir_robot).
 
 ## Example for the Laser Merger
+Before, you need to run the RVIZ demo test.
+```bash 1
+ros2 launch mir_description mir_display_launch.py
+```
 This demo shows merging of laser scan data from 2 lidars.
 ```bash 2
 ros2 launch dual_laser_merger demo_laser_merger.launch.py
-```
-
-You need also to run before the command above the RVIZ demo test.
-```bash 1
-ros2 launch mir_description mir_display_launch.py
 ```
 
 ## Requirements
@@ -176,12 +169,10 @@ ros2 launch mir_description mir_display_launch.py
 
 # MOVE THE MIR 250
 ### Teleoperate the robot (optional) via the MIR network interface
-
-* Turn the key on the robot in Manual control, go to the MIR network interface, press the *Manual control* button. The *RESUME* button starts to blinking in blue, press it and the led's robot changes from RED in BLUE (the robot state changes from Emergency Stop to Manual Control state). Now you can move the robot via the joystick on the MIR interface.
+* Turn the key on the robot in Manual control, go to the MIR network interface, press the *Manual control* button. The *RESUME* button, on the robot, starts to blinking in blue, press it and the led's robot changes from RED in BLUE (the robot state changes from Emergency Stop to Manual Control state). Now you can move the robot via the joystick on the MIR interface.
 
 
 ### Relocalize robot (optional)
-
 If the robot's localization is lost:
 
 * go to "Service" -> "Command view" -> "Set start position" and click + drag to current position of robot in the map
@@ -189,7 +180,6 @@ If the robot's localization is lost:
 
 
 ## Start the ROS driver
-
 ```bash
 ros2 launch mir_driver mir_launch.py
 ```
@@ -205,8 +195,9 @@ Open a new terminal and launch:
 ``` bash
 ros2 launch mir_manual_navigation manual_control_launch.py
 ```
+The led's robot changes from YELLOW to GREEN (the robot state changes from Pause state to Ready state).
 
-* Before launcing the manual_control_launch command be sure to have the mir_launch command run.
+* **Before launcing the manual_control_launch** command be sure to have the mir_launch command running.
 
 * The driver automatically launches a seperate **teleop** window to manually move the robot using your keyboard. And add the possibility to use whatever you want adding to the twist_mux configuration the topics.
 
@@ -219,11 +210,11 @@ ros2 launch mir_manual_navigation manual_control_launch.py
 ros2 launch mir_driver mir_launch.py
 ```
 ``` bash 2
-### mapping (slam_toolbox)
+### mapping (slam_toolbox):
 ros2 launch mir_navigation mapping.py 
 ```
 ``` bash 3
-### navigation (optional)
+### navigation:
 ros2 launch mir_manual_navigation manual_control_launch.py
 ```
 

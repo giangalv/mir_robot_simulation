@@ -98,22 +98,13 @@ def generate_launch_description():
         remappings=[('cmd_vel', 'cmd_vel_joy')],
     )
 
-    manual_mode_node = Node(
-        package='mir_manual_navigation',
-        executable='manual_mode',
-        name='manual_mode',
-        output='screen',
-        parameters=[{'use_sim_time': use_sim_time}],
-        namespace=namespace,
-    )
-
     controller_node = Node(
         package='mir_manual_navigation',
         executable='mir_control_node',
         name='mir_control_node',
         parameters=[{'use_sim_time': use_sim_time}],
         namespace=namespace,
-        #prefix='xterm -e',
+        prefix='xterm -e',
         output='screen',
     )
 
@@ -124,6 +115,5 @@ def generate_launch_description():
         keyboard_teleop_node,
         joy_node,
         twist_joy_node,
-        #manual_mode_node,
         controller_node,
     ])

@@ -129,16 +129,16 @@ class MiRControllerRestAPI(Node):
             ax.set_xlim(-1.0, 1.0)
             ax.set_ylim(-1.0, 1.0)
             
-            # --- ROBOT VISUALIZATION ---
+            # --- MIR250 VISUALIZATION ---
             robot_width = 0.8   # 800mm
             robot_height = 0.58  # 580mm
             
             # Calculate robot corners
             robot_corners = [
-                (-robot_width/2, -robot_height/2),  # Bottom-left
-                (-robot_width/2, robot_height/2),   # Top-left
-                (robot_width/2, robot_height/2),    # Top-right
-                (robot_width/2, -robot_height/2)    # Bottom-right
+                (-robot_width/2, -robot_height/2), 
+                (-robot_width/2, robot_height/2),   
+                (robot_width/2, robot_height/2),    
+                (robot_width/2, -robot_height/2)    
             ]
             
             # Draw robot
@@ -186,11 +186,11 @@ class MiRControllerRestAPI(Node):
             ax.set_ylabel('Y (meters)')
             ax.legend(loc='upper right', fontsize=10)
             
-            # Display or save
+            # Display the plot
             try:
                 plt.tight_layout()
                 plt.show(block=True)
-                plt.pause(0.001)  # Needed to allow GUI event loop to start
+                plt.pause(0.001)  # It allows GUI event loop to start
                 self.get_logger().info("\nMIR 250 visualization displayed.\nControlling the BATTERY status every 2 minutes.")
             except Exception as e:
                 self.get_logger().info(f"Visualization error or exit: {e}")
@@ -233,11 +233,9 @@ class MiRControllerRestAPI(Node):
         self._shutdown_flag = True
         
         # PHASE 1: Set PAUSE mode (blocking)
-        self.get_logger().info("Setting PAUSE mode...")
-        pause_success = False
-       
+        self.get_logger().info("Setting PAUSE mode...")    
         self.initialize_api()
-        pause_success = self.api.set_pause_control()
+        self.api.set_pause_control()
             
         # Small delay to ensure mode change propagates
         time.sleep(0.5)
