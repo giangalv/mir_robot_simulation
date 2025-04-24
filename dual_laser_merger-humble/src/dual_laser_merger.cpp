@@ -75,7 +75,7 @@ namespace merger_node
     this->declare_parameter("merged_cloud_topic", "mir_merged_cloud");
 
     //# Frame and offset configurations
-    target_frame_param = this->declare_parameter("target_frame", "base_footprint"); //  Target frame for the merged scan
+    target_frame_param = this->declare_parameter("target_frame", "virtual_laser_link"); // Target frame for the merged scan "base_footprint"
     laser_1_x_offset = this->declare_parameter("laser_1_x_offset", 0.0); //# X offset of laser 1 from the target frame
     laser_1_y_offset = this->declare_parameter("laser_1_y_offset", 0.0); //# Y offset of laser 1 from the target frame
     laser_1_yaw_offset = this->declare_parameter("laser_1_yaw_offset", 0.0); //# Yaw offset of laser 1 from the target frame
