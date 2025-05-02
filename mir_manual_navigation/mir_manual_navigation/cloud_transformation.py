@@ -38,37 +38,65 @@ class PointCloudSubscriber(Node):
         self.latest_right = msg  # Store full message
 
     def publish_latest(self):
-        if self.latest_left is None or self.latest_right is None:
-            return  # Wait until both messages are received
+        if self.latest_left is None and self.latest_right is None:
+            return  # Wait until at least one message is received
 
-        # Extract points from messages
+        # Extract points from messages if available
         left_points = np.array([
             [p[0], p[1], p[2]] for p in pc2.read_points(self.latest_left, field_names=("x", "y", "z"), skip_nans=True)
-        ])
+        ]) if self.latest_left else np.empty((0, 3))
+
         right_points = np.array([
             [p[0], p[1], p[2]] for p in pc2.read_points(self.latest_right, field_names=("x", "y", "z"), skip_nans=True)
-        ])
+        ]) if self.latest_right else np.empty((0, 3))
 
-        # Handle empty arrays
-        if left_points.size == 0 and right_points.size == 0:
-            return
-        elif left_points.size == 0:
-            # If only one camera found points, publish that
-            combined_points = right_points
-            self.publisher.publish(self.numpy_to_pointcloud2(combined_points, frame_id=self.latest_right.header.frame_id))
-            return
-        elif right_points.size == 0:
-            # If only one camera found points, publish that
-            combined_points = left_points
-            self.publisher.publish(self.numpy_to_pointcloud2(combined_points, frame_id=self.latest_left.header.frame_id))
-            return
+        '''
+        # Determine frame_id based on most recent available message
+        if self.latest_left:
+            frame_id = self.latest_left.header.frame_id
+        elif self.latest_right:
+            frame_id = self.latest_right.header.frame_id
         else:
-            # Concatenate both point clouds if both exist
-            combined_points = np.vstack((left_points, right_points))
+            frame_id = "odom"  # Fallback
+        '''
+        # Use a fixed frame_id for simplicity
+        frame_id = "base_link"
 
-        # Convert back to PointCloud2 message
-        merged_msg = self.numpy_to_pointcloud2(combined_points, frame_id=self.latest_left.header.frame_id)
-        self.publisher.publish(merged_msg)
+        # Merge or use available points
+        if left_points.size == 0 and right_points.size == 0:
+            # Publish an empty PointCloud2 message
+            empty_msg = self.create_empty_pointcloud2(frame_id)
+            self.publisher.publish(empty_msg)
+        else:
+            combined_points = np.vstack((left_points, right_points)) if left_points.size and right_points.size else (
+                left_points if left_points.size else right_points
+            )
+            merged_msg = self.numpy_to_pointcloud2(combined_points, frame_id=frame_id)
+            self.publisher.publish(merged_msg)
+    
+    def create_empty_pointcloud2(self, frame_id="base_link"):
+        header = std_msgs.msg.Header()
+        header.stamp = self.get_clock().now().to_msg()
+        header.frame_id = frame_id
+
+        fields = [
+            PointField(name="x", offset=0, datatype=PointField.FLOAT32, count=1),
+            PointField(name="y", offset=4, datatype=PointField.FLOAT32, count=1),
+            PointField(name="z", offset=8, datatype=PointField.FLOAT32, count=1),
+        ]
+
+        # Return an empty PointCloud2 message
+        return PointCloud2(
+            header=header,
+            height=1,
+            width=0,
+            fields=fields,
+            is_bigendian=False,
+            point_step=16,
+            row_step=0,
+            data=[],
+            is_dense=True
+        )
 
     def numpy_to_pointcloud2(self, points, frame_id="map"): # "odom"
         """Converts a Nx3 numpy array to a ROS2 PointCloud2 message with proper timestamp."""
@@ -82,7 +110,10 @@ class PointCloudSubscriber(Node):
             PointField(name="z", offset=8, datatype=PointField.FLOAT32, count=1),
         ]
 
-        return pc2.create_cloud(header, fields, points)
+        msg = pc2.create_cloud(header, fields, points)
+        msg.is_dense = True # I trust the data
+        msg.height = 1
+        return msg
 
 def main(args=None):
     rclpy.init(args=args)
