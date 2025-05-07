@@ -7,29 +7,45 @@ from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSDurabilityPolicy
 import sensor_msgs_py.point_cloud2 as pc2
 from sensor_msgs.msg import PointCloud2, PointField
 import std_msgs.msg
+from tf2_ros import Buffer, TransformListener
+
 
 class PointCloudSubscriber(Node):
     def __init__(self):
-        super().__init__('pointcloud_subscriber')
+        super().__init__('pointcloud_merger')
 
+        # Use BEST_EFFORT reliability for sensor data
         qos = QoSProfile(
-            depth=5,  # Keep only the latest message
-            reliability=QoSReliabilityPolicy.BEST_EFFORT,  # Suitable for sensor data
-            durability=QoSDurabilityPolicy.VOLATILE  # Don't store old messages
+            depth=5,
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+            durability=QoSDurabilityPolicy.VOLATILE
         )
+
+        # TF2 setup for frame transformation
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
         self.latest_left = None  # Store full message
         self.latest_right = None  # Store full message
 
         self.subscription_left = self.create_subscription(
-            PointCloud2, '/camera_floor_left/obstacles', self.left_callback, qos)
+            PointCloud2, 
+            '/camera_floor_left/obstacles', 
+            self.left_callback, 
+            qos)
         
         self.subscription_right = self.create_subscription(
-            PointCloud2, '/camera_floor_right/obstacles', self.right_callback, qos)
+            PointCloud2, 
+            '/camera_floor_right/obstacles', 
+            self.right_callback, 
+            qos)
 
-        self.publisher = self.create_publisher(PointCloud2, '/camera_floor/obstacles', 20)
+        self.publisher = self.create_publisher(
+            PointCloud2, 
+            '/camera_floor/obstacles', 
+            20)
 
-        self.timer = self.create_timer(0.1, self.publish_latest)  # Publish at ~10 Hz
+        self.timer = self.create_timer(0.1, self.publish_merged)  # Publish at ~10 Hz
 
     def left_callback(self, msg: PointCloud2):
         self.latest_left = msg  # Store full message
@@ -37,7 +53,7 @@ class PointCloudSubscriber(Node):
     def right_callback(self, msg: PointCloud2):
         self.latest_right = msg  # Store full message
 
-    def publish_latest(self):
+    def publish_merged(self):
         if self.latest_left is None and self.latest_right is None:
             return  # Wait until at least one message is received
 

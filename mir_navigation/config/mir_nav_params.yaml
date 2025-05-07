@@ -1,6 +1,6 @@
-amcl:
-# It helps the robot understand its location on a map. 
-# It uses a particle filter to estimate the robot’s position by matching laser scans from a LIDAR sensor with the existing map. 
+# AMCL helps the robot understand its location on a map. 
+# It uses a particle filter to estimate the robot’s position by matching laser scans from a LIDAR sensor with the existing map.
+amcl: 
   ros__parameters:
     use_sim_time: False
     alpha1: 0.2 # Noise in odometry's rotation estimate from rotation
@@ -12,7 +12,7 @@ amcl:
     beam_skip_distance: 0.5 # Maximum distance to consider skipping beams that don't match the map
     beam_skip_error_threshold: 0.9 # Percentage of beams to skip before forcing a full update due to bad convergence
     beam_skip_threshold: 0.3 # Percentage of beams required to skip
-    do_beamskip: false # Percentage of beams required to skip before forcing a full update
+    do_beamskip: False # Percentage of beams required to skip before forcing a full update
     global_frame_id: "map"
     lambda_short: 0.1 
     laser_likelihood_max_dist: 2.0
@@ -50,8 +50,8 @@ amcl:
     #  z: 0.0
     #  yaw: 0.0
 
+# BT acts as the central decision maker, coordinating the robot's navigation tasks throught behavior trees.
 bt_navigator:
-# It acts as the central decision maker, coordinating the robot's navigation tasks throught behavior trees.
   ros__parameters:
     use_sim_time: False
     global_frame: map
@@ -59,8 +59,10 @@ bt_navigator:
     odom_topic: /odom
     bt_loop_duration: 10 # How oftren the robot's "brain" makes decsions in ms (it makes 100 decisions per second)
     default_server_timeout: 20 # How long to wait for navigation components to respond  in ms
-    wait_for_service_timeout: 1000 # Timeout for BT nodes waiting for acknowledgement from a service or action server during initialization
-    action_server_result_timeout: 900.0 # Timeout for action servers to discard a goal handle if a result hasn't benn produced in seconds (15 minutes)
+    #wait_for_service_timeout: 1000 # Timeout for BT nodes waiting for acknowledgement from a service or action server during initialization
+    #action_server_result_timeout: 900.0 # Timeout for action servers to discard a goal handle if a result hasn't benn produced in seconds (15 minutes)
+    #error_code_names: [“compute_path_error_code”, “follow_path_error_code”]
+    #transform_tolerance: 0.1
     # Navigators are set up in the navigation.py file, and the default ones are:
     # -> navigate_to_pose_w_replanning_and_recovery.xml
     # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
@@ -112,8 +114,7 @@ bt_navigator:
     - nav2_back_up_cancel_bt_node
     - nav2_assisted_teleop_cancel_bt_node
     - nav2_drive_on_heading_cancel_bt_node
-  error_code_names: [“compute_path_error_code”, “follow_path_error_code”]
-  transform_tolerance: 0.1
+    
 
 bt_navigator_navigate_through_poses_rclcpp_node:
   ros__parameters:
@@ -123,229 +124,181 @@ bt_navigator_navigate_to_pose_rclcpp_node:
   ros__parameters:
     use_sim_time: False
 
-controller_server:
 # It ensures the robot follows the path correctly, avoids obstacles using the local map around it, uses various plugins to check its progress and confirm when the robot reaches its goal.
+controller_server:
   ros__parameters:
     use_sim_time: False
     controller_frequency: 20.0
-    costmap_update_timeout: 0.30 # How long to wait for the costmap to update before giving up in seconds
-    min_x_velocity_threshold: 0.001 # Minimum velocity threshold to filter odometry noise in the x direction
-    min_y_velocity_threshold: 0.5 # Minimum velocity threshold to filter odometry noise in the y direction
-    min_theta_velocity_threshold: 0.001 # Minimum angular velocity threshold to filter odometry noise
-    failure_tolerance: 0.1 # Allowing the controller to fail for up to 0.1 seconds before the FolowPath action fails provides some tolerance for temporary failures
-    
-    progress_checker_plugin: "progress_checker" # Monitoring the robot's progress
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.5
+    min_theta_velocity_threshold: 0.001
+    failure_tolerance: 0.1
+    progress_checker_plugin: "progress_checker"
+    goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
+    controller_plugins: ["FollowPath"]
+
+    # Progress checker parameters
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.5 # In meters, it is a threshold for determining if the robot has made sufficient progress
-      movement_time_allowance: 10.0 # In seconds, time limit before considering the robot to be stuck
-    
-    goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
-    general_goal_checker:
-      #stateful: True
-      plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.25 # In meters, the distance from the goal position to consider it reached
-      yaw_goal_tolerance: 0.25 # In radians, the angle from the goal orientation to consider it reached
+      required_movement_radius: 0.5
+      movement_time_allowance: 10.0
+    # Goal checker parameters
     #precise_goal_checker:
     #  plugin: "nav2_controller::SimpleGoalChecker"
     #  xy_goal_tolerance: 0.25
     #  yaw_goal_tolerance: 0.25
     #  stateful: True
-
-    controller_plugins: ["FollowPath"]
+    general_goal_checker:
+      stateful: True
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.25 #0.25
+      yaw_goal_tolerance: 0.05 #0.25
+    # DWB parameters
     FollowPath:
-      plugin: "nav2_mppi_controller::MPPIController"
-      time_steps: 56 # Each time step represents a future point where trajectories are evaluated
-      model_dt: 0.05 # Time step for the model, in seconds 
-      batch_size: 3000 # Number of trajectories to sample for each time step
-      vx_std: 0.2 # Standard deviation for the x velocity m/s
-      vy_std: 0.2 # Standard deviation for the y velocity m/s
-      wz_std: 0.4 # Standard deviation for the angular velocity rad/s
-      vx_max: 0.5 # Maximum x velocity m/s
-      vx_min: -0.35 # Minimum x velocity m/s
-      vy_max: 0.5 # Maximum y velocity m/s
-      wz_max: 1.9 # Maximum angular velocity rad/s
-      ax_max: 1.5 # Maximum x acceleration m/s^2
-      ax_min: -1.5 # Minimum x acceleration m/s^2
-      ay_max: 1.5 # Maximum y acceleration m/s^2
-      az_max: 2.0 # Maximum angular acceleration rad/s^2
-      iteration_count: 1 # Iteration count for the MPPI algorithm
-      #prune_distance: 1.7 (default 1.5)
-      #transform_tolerance: 0.1 (default 0.1)
-
-      ### for debugging  ###
-      #visualize: false (default false) only for debugging
-      #TrajectoryVisualizer:
-      #  trajectory_step: 5
-      #  time_step: 3
-      #AckermannConstraints:
-      #  min_turning_r: 0.2
-      ## for debugging  ###
-
-      temperature: 0.3 # Controls how strongly the controller favors lower-cost trajectories
-      gamma: 0.015 # Controls how the controller weighs trajectory costs in its decision-making
-      motion_model: "DiffDrive"
-
-      critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
-      # Robot limits
-      ConstraintCritic: # Make sure the robot follows the constraints of the motion model
-        enabled: true
-        cost_power: 1
-        cost_weight: 4.0
-      # Obstacle avoidance
-      CostCritic: # Think of this like a bubble around the robot to keep it safe
-          enabled: true
-          cost_power: 1
-          cost_weight: 3.81
-          critical_cost: 300.0
-          consider_footprint: true
-          collision_cost: 1000000.0
-          near_goal_distance: 1.0
-          trajectory_point_step: 2
-      # Getting to destination
-      GoalCritic: # This is the cost of the robot being far from the goal position
-              enabled: true
-              cost_power: 1
-              cost_weight: 5.0 # Determines how much the robot reaches the exact spot
-              threshold_to_consider: 1.4 # In meters, it is the distance where the robot starts to focus on the goal
-      # Final rotation
-      GoalAngleCritic: # This is the cost of the robot being far from the goal angle
-          enabled: true
-          cost_power: 1
-          cost_weight: 3.0 # Determines how much the robot reaches the exact angle
-          threshold_to_consider: 0.5 # In meters, it is the distance where the robot starts to focus on the final angle
-      # Staying on path
-      PathAlignCritic:
-            enabled: true
-            cost_power: 1
-            cost_weight: 14.0 # Determines how much the robot aligns with the path
-            #max_path_occupancy_ratio: 0.05
-            #trajectory_point_step: 4
-            threshold_to_consider: 0.5 # In meters, it stops the robot to follow the path when it's very close to the goal
-            #offset_from_furthest: 20
-            #use_path_orientations: false
-      # Path direction
-      PathAngleCritic:
-          enabled: true
-          cost_power: 1
-          cost_weight: 2.0
-          #offset_from_furthest: 4
-          threshold_to_consider: 0.5 # In meters, it stops the robot caring about path direction and focuses on final position
-          #max_angle_to_furthest: 1.0
-          #forward_preference: true
-      # Forward progress
-      PathFollowCritic:
-            enabled: true
-            cost_power: 1
-            cost_weight: 5.0 # Determines how strongly the robot is urged to move forward
-            #offset_from_furthest: 5
-            threshold_to_consider: 1.4 # In meters, it stops the robot caring about path direction and focuses on final position
-      # Forward motion
-      PreferForwardCritic:
-        enabled: true
-        cost_power: 1
-        cost_weight: 5.0 # Determines how much the robot prefers to move forward
-        threshold_to_consider: 0.5 # In meters, it stops the robot caring about 
-          
-      # Smooth rotation for omni-directional robots
-      #TwirlingCritic:
-      #  enabled: true
-      #  cost_power: 1
-      #  cost_weight: 10.0 # Determines how much the robot prefers to rotate smoothly
-
-      # Option to replace Cost and use Obstacles instead
-      # ObstaclesCritic:
-      #   enabled: true
-      #   cost_power: 1
-      #   repulsion_weight: 1.5
-      #   critical_weight: 20.0
-      #   consider_footprint: false
-      #   collision_cost: 10000.0
-      #   collision_margin_distance: 0.1
-      #   near_goal_distance: 0.5
-
-      # VelocityDeadbandCritic:
-      #   enabled: true
-      #   cost_power: 1
-      #   cost_weight: 35.0
-      #   deadband_velocities: [0.05, 0.05, 0.05]
+      plugin: "dwb_core::DWBLocalPlanner"
+      debug_trajectory_details: True
+      min_vel_x: 0.0
+      min_vel_y: 0.0
+      max_vel_x: 0.26
+      max_vel_y: 0.0
+      max_vel_theta: 1.0
+      min_speed_xy: 0.0
+      max_speed_xy: 0.26
+      min_speed_theta: 0.0
+      acc_lim_x: 2.5
+      acc_lim_y: 0.0
+      acc_lim_theta: 3.2
+      decel_lim_x: -2.5
+      decel_lim_y: 0.0
+      decel_lim_theta: -3.2
+      vx_samples: 20
+      vy_samples: 5
+      vtheta_samples: 20
+      sim_time: 1.7
+      linear_granularity: 0.05
+      angular_granularity: 0.025
+      transform_tolerance: 0.2
+      xy_goal_tolerance: 0.25 #0.25
+      trans_stopped_velocity: 0.25
+      short_circuit_trajectory_evaluation: True
+      stateful: True
+      critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist", "ObstacleFootprint"]
+      BaseObstacle.scale: 0.02
+      PathAlign.scale: 32.0
+      PathAlign.forward_point_distance: 0.1
+      GoalAlign.scale: 24.0
+      GoalAlign.forward_point_distance: 0.1
+      PathDist.scale: 32.0
+      GoalDist.scale: 24.0
+      RotateToGoal.scale: 24.0
+      RotateToGoal.slowing_factor: 5.0
+      RotateToGoal.lookahead_time: -1.0
       
 
 local_costmap:
-  local_costmap:
-    ros__parameters:
-      use_sim_time: False
-      #transform_tolerance: 0.5 # 0.2
-      update_frequency: 5.0
-      publish_frequency: 5.0 # 2.0
-      global_frame: odom
-      robot_base_frame: base_link
-      rolling_window: True # Allows the costmap to move with the robot
-      width: 5 # In meters
-      height: 5 # In meters
-      resolution: 0.05
-      # offset: front / back from base_link
-      # footprint: '[ [front, width/2], [back, width/2], [-back, -width/2], [front, -width/2] ]'
-      # footprint dynamic
-      footprint: '[ [0.54, 0.38], [-0.54, 0.38], [-0.54, -0.38], [0.54, -0.38] ]'
-      # footprint basic
-      #footprint: '[ [0.6, 0.5], [-0.6, 0.5], [-0.6, -0.5], [0.6, -0.5] ]'
-      footprint_padding: 0.01
-      plugins: [“obstacle_layer”,  “voxel_layer”, “range_sensor_layer”, “denoise_layer”, “inflation_layer”] # Order matters!
-      # For 2D obstacle representation using laser scan
-      obstacle_layer:
-        plugin: "nav2_costmap_2d::ObstacleLayer"
-        enabled: True
-        observation_sources: sick300laser
-        sick300laser:
-          topic: /mir_scan
-          clearing: True
-          marking: True
-          data_type: "LaserScan"
-          #raytrace_max_range: 3.0
-          raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
-          obstacle_min_range: 0.0
-      # For 3D obstacle representation using depth camera
-      voxel_layer:
-        plugin: "nav2_costmap_2d::VoxelLayer"
-        enabled: True
+  ros__parameters:
+    use_sim_time: False
+    #transform_tolerance: 0.5 # 0.2
+    update_frequency: 5.0
+    publish_frequency: 5.0 # 2.0
+    global_frame: odom
+    robot_base_frame: base_link
+    rolling_window: True # Allows the costmap to move with the robot
+    width: 5 # In meters
+    height: 5 # In meters
+    resolution: 0.05
+    # offset: front / back from base_link
+    # footprint: '[ [front, width/2], [back, width/2], [-back, -width/2], [front, -width/2] ]'
+    # footprint dynamic
+    footprint: '[ [0.54, 0.38], [-0.54, 0.38], [-0.54, -0.38], [0.54, -0.38] ]'
+    # footprint basic
+    #footprint: '[ [0.6, 0.5], [-0.6, 0.5], [-0.6, -0.5], [0.6, -0.5] ]'
+    footprint_padding: 0.01
+    #plugins: [“obstacle_layer”,  “voxel_layer”, “range_sensor_layer”, “denoise_layer”, “inflation_layer”] # Order matters!
+    plugins: [“obstacle_layer”,  “voxel_layer”, “inflation_layer”] # Order matters!
+    # For 2D obstacle representation using laser scan
+    obstacle_layer:
+      plugin: "nav2_costmap_2d::ObstacleLayer"
+      enabled: True
+      observation_sources: sick300laser
+      sick300laser:
+        topic: /mir_scan
+        clearing: True
+        marking: True
+        data_type: "LaserScan"
+        #raytrace_max_range: 3.0
+        raytrace_min_range: 0.0
+        #obstacle_max_range: 2.5
+        obstacle_min_range: 0.0
+        max_obstacle_height: 3.0 # In meters
+    # For 3D obstacle representation using depth camera
+    voxel_layer:
+      plugin: "nav2_costmap_2d::VoxelLayer"
+      enabled: True
+      footprint_clearing_enabled: True
+      max_obstacle_height: 3.0
+      z_voxels: 18 # Number of voxels in the z direction
+      origin_z: 0.0 # the origin of the voxel layer is set to the ground level
+      z_resolution: 0.2 # default
+      #unknown_threshold: 0.5 # default
+      #mark_threshold: 0 # default
+      #combination_method: 1 # default
+      publish_voxel_map: True # To reduce computation overhead use False
+      observation_sources: realsensed345_dx realsensed345_ds # realsensed345
+      realsensed345_dx:
+        topic: /camera_floor_right/transformed_obstacles
+        clearing: False # True
+        marking: True
+        data_type: "PointCloud2"
+        raytrace_min_range: 0.0
+        raytrace_max_range: 2.5 # 1.25? Range to clear obstacles
+        obstacle_min_range: 0.05
+        obstacle_max_range: 2.0 # 1.25? Range to mark obstacles 
+        min_obstacle_height: 0.0
         max_obstacle_height: 3.0
-        z_voxels: 10 # default
-        origin_z: 0.0 # the origin of the voxel layer is set to the ground level
-        z_resolution: 0.2 # default
-        observation_sources: realsensed345
-        realsensed345:
-          topic: /camera_floor/obstacles
-          clearing: True # False?
-          marking: True
-          data_type: "PointCloud2"
-          raytrace_min_range: 0.0
-          raytrace_max_range: 2.5 # 1.25?
-          obstacle_min_range: 0.0
-          obstacle_max_range: 2.5 # 1.25?
-          min_obstacle_height: 0.0
-          max_obstacle_height: 3.0
-      ## “range_sensor_layer” ## for handling range sensor dara from ultrasonic sensor
-      range_sensor_layer:
-        enabled: False
-      ## “denoise_layer” ## for removing salt and pepper noise from the sensors
-      inflation_layer:
-        plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.55
-      
-      always_send_full_costmap: True
+      realsensed345_ds:
+        topic: /camera_floor_left/transformed_obstacles
+        clearing: False # True
+        marking: True
+        data_type: "PointCloud2"
+        raytrace_min_range: 0.0
+        raytrace_max_range: 2.5 # 1.25? Range to clear obstacles
+        obstacle_min_range: 0.05
+        obstacle_max_range: 2.0 # 1.25? Range to mark obstacles 
+        min_obstacle_height: 0.0
+        max_obstacle_height: 3.0
+    ## “range_sensor_layer” ## for handling range sensor dara from ultrasonic sensor
+    #range_sensor_layer:
+      # enabled: False
+      # topics: /ultrasonic
+      # phi: 1.2 # The width of the sensor's field of view, in radians
+      # inflate_cone: 1.0 # How much the triangular area covered by the sensor is inflated, 1.0 means NO inflation
+      # no_readings_timeout: 0.0 # If the layer does not receive sensor data for this amount of time (in seconds), it will warn the user and mark the layer as not current. 0.0 means disables this timeout
+      # clear_threshold: 0.2 # BELOW Threshold for marked as free in the costmap
+      # mark_threshold: 0.8 # ABOVE Threshold for marked as occupied in the costmap
+      # clear_on_max_reading: True # If the sensor reading is at its maximum range, the layer will clear the area in the costmap, it helps to remove false positives
+      # input_sensor_type: ALL # The layer will automatically detect the type of sensor used
+    ## “denoise_layer” ## for removing salt and pepper noise from the sensors
+    #denoise_layer:
+      #enabled: False
+      #minimal_group_size: 2 # How big the group of obstacle points needs to be to stay on the map.
+      #group_connectivity_type: 8 # How obstalce points are connected to form groups
+    inflation_layer:
+      enabled: True
+      plugin: "nav2_costmap_2d::InflationLayer"
+      inflation_radius: 1.75 # In meters, the distance from the robot to consider an area as inflated
+      cost_scaling_factor: 2.58 # The rate at which the cost decays exponentially across the inflation radius
+
 
 global_costmap:
   global_costmap:
     ros__parameters:
-      transform_tolerance: 0.5 # 0.2
-      update_frequency: 1.0
-      publish_frequency: 1.0
+      use_sim_time: False
+      #transform_tolerance: 0.5 # 0.2
+      update_frequency: 5.0
+      publish_frequency: 5.0
       global_frame: map
       robot_base_frame: base_link
-      use_sim_time: False
       # offset: front / back from base_link
       # footprint: '[ [front, width/2], [back, width/2], [-back, -width/2], [front, -width/2] ]'
       # footprint dynamic
@@ -354,8 +307,12 @@ global_costmap:
       #footprint: '[ [0.6, 0.5], [-0.6, 0.5], [-0.6, -0.5], [0.6, -0.5] ]'
       footprint_padding: 0.01
       resolution: 0.05
-      track_unknown_space: true
-      plugins: ["obstacle_layer", "static_layer", "inflation_layer"]
+      track_unknown_space: True
+      #plugins: [“static_layer”, “obstacle_layer”, “voxel_layer”, “range_sensor_layer”, “inflation_layer”]
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: True 
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
@@ -367,22 +324,46 @@ global_costmap:
           data_type: "LaserScan"
           #raytrace_max_range: 3.0
           raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
+          #obstacle_max_range: 2.5
           obstacle_min_range: 0.0
-      static_layer:
-        plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: True
+          max_obstacle_height: 3.0 # In meters
+      #range_sensor_layer: # Like obstacle_layer but for ultrasonic or infrared sensors
+        # enabled: False
+        # toppic: /ultrasonic
+        # phi: 1.2 # The width of the sensor's field of view, in radians
+        # inflate_cone: 1.0 # How much the triangular area covered by the sensor is inflated, 1.0 means NO inflation
+        # no_readings_timeout: 0.0 # If the layer does not receive sensor data for this amount of time (in seconds), it will warn the user and mark the layer as not current. 0.0 means disables this timeout
+        # clear_threshold: 0.2 # BELOW Threshold for marked as free in the costmap
+        # mark_threshold: 0.8 # ABOVE Threshold for marked as occupied in the costmap
+        # clear_on_max_reading: True # If the sensor reading is at its maximum range, the layer will clear the area in the costmap, it helps to remove false positives
+        # input_sensor_type: ALL # The layer will automatically detect the type of sensor used
+      #voxel_layer:
+        # plugin: "nav2_costmap_2d::VoxelLayer"
+        # enabled: False # True
+        # publish_voxel_map: False # To reduce computation overhead
+        # origin_z: 0.0 # the origin of the voxel layer is set to the ground level
+        # z_resolution: 0.2 # default
+        # z_voxels: 10 # Number of voxels in the z direction
+        # min_obstacle_height: 0.0
+        # max_obstacle_height: 3.0
+        # mark_threshold: 0 
+        # observation_sources: realsensed345_depth
+        # realsensed345_depth:
+        #   topic: /camera_depth
+        #   raytrace_min_range: 0.05
+        #   raytrace_max_range: 2.5 # 1.25? Range to clear obstacles
+        #   obstacle_min_range: 0.05
+        #   obstacle_max_range: 2.0 # 1.25? Range to mark obstacles
+        #   min_obstacle_height: 0.0
+        #   max_obstacle_height: 3.0
+        #   clearing: False # True?
+        #   marking: True
+        #   data_type: "PointCloud2"
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.55
-      always_send_full_costmap: True
+        cost_scaling_factor: 2.58
+        inflation_radius: 1.75
 
-map_server:
-  ros__parameters:
-    use_sim_time: False
-    # Overridden in launch by the "map" launch configuration or provided default value.
-    yaml_filename: ""
 
 map_saver:
   ros__parameters:
@@ -392,16 +373,18 @@ map_saver:
     occupied_thresh_default: 0.65
     map_subscribe_transient_local: True
 
+
 planner_server:
   ros__parameters:
     expected_planner_frequency: 20.0
     use_sim_time: False
     planner_plugins: ["GridBased"]
     GridBased:
-      plugin: "nav2_navfn_planner/NavfnPlanner"
+      plugin: "nav2_navfn_planner/NavfnPlanner" #“nav2_navfn_planner::NavfnPlanner” 
       tolerance: 0.5
-      use_astar: false
-      allow_unknown: true
+      use_astar: False
+      allow_unknown: True
+
 
 smoother_server:
   ros__parameters:
@@ -411,47 +394,54 @@ smoother_server:
       plugin: "nav2_smoother::SimpleSmoother"
       tolerance: 1.0e-10
       max_its: 1000
-      do_refinement: True
+      #do_refinement: True
+
 
 behavior_server:
   ros__parameters:
-    costmap_topic: local_costmap/costmap_raw
-    footprint_topic: local_costmap/published_footprint
+    use_sim_time: False
+    local_costmap_topic: local_costmap/costmap_raw
+    local_footprint_topic: local_costmap/published_footprint
+    global_costmap_topic: global_costmap/costmap_raw
+    global_footprint_topic: global_costmap/published_footprint
     cycle_frequency: 10.0
-    behavior_plugins: ["spin", "backup", "drive_on_heading", "assisted_teleop", "wait"]
+    #costmap_topic: local_costmap/costmap_raw
+    #footprint_topic: local_costmap/published_footprint
+    cycle_frequency: 10.0
+    behavior_plugins: ["spin", "backup", "drive_on_heading", "wait", "assisted_teleop"]
     spin:
-      plugin: "nav2_behaviors/Spin"
+      plugin: "nav2_behaviors/Spin" 
     backup:
-      plugin: "nav2_behaviors/BackUp"
+      plugin: "nav2_behaviors/BackUp" 
     drive_on_heading:
-      plugin: "nav2_behaviors/DriveOnHeading"
+      plugin: "nav2_behaviors/DriveOnHeading" 
     wait:
-      plugin: "nav2_behaviors/Wait"
+      plugin: "nav2_behaviors/Wait" 
     assisted_teleop:
-      plugin: "nav2_behaviors/AssistedTeleop"
-    global_frame: odom
+      plugin: "nav2_behaviors/AssistedTeleop" 
+    simulate_ahead_time: 2.0 # In seconds, the time the robot simulates ahead to check for obstacles
+    max_rotational_vel: 0.5 # Maximum rotational velocity in radians per second
+    min_rotational_vel: 0.4 # Minimum rotational velocity in radians per second
+    rotational_acc_lim: 3.2 # Maximum rotational acceleration in radians per second squared
+    enable_stamped_cmd: False # True only Jazzy or older versions 
+    local_frame: odom
+    global_frame: map
     robot_base_frame: base_link
-    transform_tolerance: 0.1
-    use_sim_time: False
-    simulate_ahead_time: 2.0
-    max_rotational_vel: 0.5
-    min_rotational_vel: 0.4
-    rotational_acc_lim: 3.2
+    transform_timeout: 0.1 # How long to wait for the transform to be available
 
-robot_state_publisher:
-  ros__parameters:
-    use_sim_time: False
 
 waypoint_follower:
   ros__parameters:
     use_sim_time: False
-    loop_rate: 20
-    stop_on_failure: false
+    loop_rate: 10 # 20 default
+    stop_on_failure: False
     waypoint_task_executor_plugin: "wait_at_waypoint"
     wait_at_waypoint:
       plugin: "nav2_waypoint_follower::WaitAtWaypoint"
       enabled: True
-      waypoint_pause_duration: 200
+      waypoint_pause_duration: 200 # In seconds, allowing the robot to stabilize or perform tasks at each point.
+    action_server_result_timeout: 900.0 # Timeout for action servers to discard a goal handle if a result hasn't been produced in seconds (15 minutes)
+
 
 velocity_smoother:
   ros__parameters:
@@ -461,9 +451,42 @@ velocity_smoother:
     feedback: "OPEN_LOOP"
     max_velocity: [0.26, 0.0, 1.0]
     min_velocity: [-0.26, 0.0, -1.0]
+    deadband_velocity: [0.0, 0.0, 0.0]
+    velocity_timeout: 1.0
     max_accel: [2.5, 0.0, 3.2]
     max_decel: [-2.5, 0.0, -3.2]
     odom_topic: "odom"
     odom_duration: 0.1
-    deadband_velocity: [0.0, 0.0, 0.0]
-    velocity_timeout: 1.0
+    use_realtime_priority: False
+    enable_stamped_cmd_vel: False # True only Jazzy or older versions 
+    
+
+#collision_monitor:
+#  ros_parameters:
+#    use_sim_time: False
+#    base_frame_id: "base_footprint"
+#    odom_frame_id: "odom"
+#    transform_tolerance: 0.2
+#    source_timeout: 1.0
+#    cmd_vel_in_topic: "cmd_vel_smoothed"
+#    cmd_vel_out_topic: "cmd_vel"
+#    state_topic: "collision_monitor_state"
+#    base_shift_correction: True
+#    polygons: ["FootprintApproach"]
+#    FootprintApproach:
+#      type: "polygon"
+#      time_before_collision: 1.2 # In seconds, time to check for potential collisions
+#      simulation_time_step: 0.1 # In seconds, How often to check for collisions during the prediction
+#    observation_sources: ["/mir_scan", "/camera_floor/obstacles"]
+
+map_server:
+  ros__parameters:
+    use_sim_time: False
+    # Overridden in launch by the "map" launch configuration or provided default value.
+    yaml_filename: ""
+
+
+robot_state_publisher:
+  ros__parameters:
+    use_sim_time: False
+

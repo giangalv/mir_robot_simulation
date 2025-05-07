@@ -3,7 +3,7 @@
  * @brief Implementation of the MergerNode class for merging data from two laser scanners.
  */
 
-#include "dual_laser_merger/dual_laser_merger.hpp"
+#include "sensors_launcher_mir_250/dual_laser_merger.hpp"
 
 using namespace std::chrono_literals;
 

@@ -38,13 +38,16 @@ def generate_launch_description():
 
     # Lifecycle nodes to manage
     lifecycle_nodes = [
-        'controller_server',
-        'smoother_server',
-        'planner_server',
-        'behavior_server',
         'bt_navigator',
+        'controller_server',
+        #'map_saver',
+        'planner_server',
+        'smoother_server',
+        'behavior_server',
         'waypoint_follower',
         'velocity_smoother'
+        #'map_server',
+        #'robot_state_publisher'
     ]
 
     # Parameter substitutions for real-robot
@@ -54,7 +57,7 @@ def generate_launch_description():
         'default_nav_to_pose_bt_xml': default_bt_xml_path,
         'default_nav_through_poses_bt_xml': default_bt_xml_path,
         'controller_server.controller_frequency': '20.0',  
-        'planner_server.expected_planner_frequency': '1.0',
+        'planner_server.expected_planner_frequency': '20.0', # '1.0'
         'behavior_server.bt_loop_duration': '100'
     }
 
@@ -80,7 +83,7 @@ def generate_launch_description():
             
         DeclareLaunchArgument(
             'params_file',
-            default_value=os.path.join(mir_nav_dir, 'config', 'mir_nav_params.yaml'),
+            default_value=os.path.join(mir_nav_dir, 'config', 'mir_nav_params.yaml'), 
             description='Full path to the ROS2 parameters file'),
             
         DeclareLaunchArgument(

@@ -113,7 +113,7 @@ ros2 launch mir_description mir_display_launch.py
 ```
 This demo shows merging of laser scan data from 2 lidars.
 ```bash 2
-ros2 launch dual_laser_merger demo_laser_merger.launch.py
+ros2 launch sensors_launcher_mir_250 demo_laser_merger.launch.py
 ```
 
 ## Requirements

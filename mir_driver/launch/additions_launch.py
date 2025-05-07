@@ -44,7 +44,7 @@ def generate_launch_description():
     
     # Get the package share directory for mir_description
     mir_description_dir = get_package_share_directory('mir_description')
-    scan_merger_dir = get_package_share_directory('dual_laser_merger')
+    scan_merger_dir = get_package_share_directory('sensors_launcher_mir_250')
     
     # Define launch configurations
     use_sim_time_standard = DeclareLaunchArgument(
@@ -70,7 +70,7 @@ def generate_launch_description():
 
     laser_merger_launcher = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(scan_merger_dir, 'launch', 'demo_laser_merger.launch.py')),
+            os.path.join(scan_merger_dir, 'launch', 'sensors_launcher.launch.py')),
         launch_arguments={
             'namespace': name_space,
             'use_sim_time': use_sim_time
@@ -104,7 +104,7 @@ def generate_launch_description():
         rviz_config_file_standard,
         standard_namespace,
         laser_merger_launcher,
-        cloud_merger_launcher,
+        #cloud_merger_launcher,
         rviz_launcher,
         #foxglove_launcher,
     ])
