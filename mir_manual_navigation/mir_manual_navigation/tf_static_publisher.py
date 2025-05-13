@@ -6,6 +6,10 @@ from tf2_msgs.msg import TFMessage
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSDurabilityPolicy
 from geometry_msgs.msg import TransformStamped
 from builtin_interfaces.msg import Time
+import subprocess  
+from ament_index_python.packages import get_package_share_directory
+import os
+
 
 class TFStaticRepublisher(Node):
     def __init__(self):
@@ -22,13 +26,14 @@ class TFStaticRepublisher(Node):
             TFMessage, '/tf_static_starter', self.tf_static_callback, qos_profile)
         self.tf_pub = self.create_publisher(TFMessage, '/tf_static', qos_profile)
         
-        self.timer = self.create_timer(0.05, self.publish_tf)  # 20 Hz
         self.cached_transforms = []
         self.add_virtual_laser_static_transform()
+        self.timer = self.create_timer(0.1, self.publish_tf)  # 20 Hz (0.05)
 
     def add_virtual_laser_static_transform(self):
         transform = TransformStamped()
-        transform.header.stamp = Time(sec=0, nanosec=0)
+        transform.header.stamp = self.get_clock().now().to_msg()
+        #transform.header.stamp = Time(sec=0, nanosec=0)
         transform.header.frame_id = 'base_link'
         transform.child_frame_id = 'virtual_laser_link'
 
@@ -56,6 +61,33 @@ class TFStaticRepublisher(Node):
     def publish_tf(self):
         if self.cached_transforms:
             self.tf_pub.publish(TFMessage(transforms=self.cached_transforms))
+    
+    def on_shutdown_callback(self):
+        """Called when ROS2 is shutting down"""
+        print("ROS is shutting down...")
+
+        try:
+            # Try both possible locations for the script
+            script_locations = [
+                os.path.join(get_package_share_directory('mir_manual_navigation'), 'mir_manual_navigation', 'pause_mode_setup.sh'),
+                os.path.join(os.path.dirname(__file__), 'pause_mode_setup.sh')
+            ]
+            
+            for script_path in script_locations:
+                if os.path.exists(script_path):
+                    print(f"Executing shutdown script: {script_path}")
+                    subprocess.run([script_path], check=True)
+                    print("Shutdown script executed successfully.")
+                    return
+                    
+            print("Error: Could not find pause_mode_setup.sh in any of these locations:")
+            for loc in script_locations:
+                print(f" - {loc}")
+                
+        except subprocess.CalledProcessError as e:
+            print(f"Script failed with return code {e.returncode}")
+        except Exception as e:
+            print(f"Error running shutdown script: {e}")
 
 def main():
     rclpy.init()
@@ -66,7 +98,9 @@ def main():
         print("KeyboardInterrupt received. Shutting down.")
     finally:
         node.destroy_node()
+        node.on_shutdown_callback()
         rclpy.try_shutdown()
+
 
 
 if __name__ == '__main__':

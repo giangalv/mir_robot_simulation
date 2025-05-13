@@ -14,6 +14,8 @@ setup(
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name, 'launch'), glob('launch/*launch.py')),
         (os.path.join('share', package_name, 'config'), glob('config/*')),
+        (os.path.join('share', package_name, 'mir_manual_navigation'), 
+            glob(os.path.join('mir_manual_navigation', '*.sh'))),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

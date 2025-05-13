@@ -231,10 +231,15 @@ class RosbridgeWSConnection():
 
     ## Handle the WebSocket connection closing.
     #  @param ws The WebSocket object.
+    '''
     def on_close(self, ws):
         self.connected = False
         print("ROS bridge closed")
-    
+    ''' 
+    def on_close(self, ws, close_status_code, close_msg):
+        self.connected = False
+        print("ROS bridge closed")
+
     ## Close the WebSocket connection gracefully.
     def close_(self):
         self.ws.close()
