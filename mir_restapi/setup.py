@@ -24,6 +24,7 @@ setup(
         'console_scripts': [
             'mir_restapi_server = mir_restapi.mir_restapi_server:main',
             'mir_restapi_sync_time = mir_restapi.mir_restapi_sync_time:main',
+            'mir_restapi_pause = mir_restapi.mir_restapi_pause:main',
         ],
     },
 )
