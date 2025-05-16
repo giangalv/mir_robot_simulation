@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start the MIR REST API server in the background
-ros2 run mir_restapi mir_restapi_pause --ros-args -p mir_hostname:='130.251.13.90' -p mir_restapi_auth:='Basic ZGlzdHJpYnV0b3I6NjJmMmYwZjFlZmYxMGQzMTUyYzk1ZjZmMDU5NjU3NmU0ODJiYjhlNDQ4MDY0MzNmNGNmOTI5NzkyODM0YjAxNA==' &
+ros2 run mir_restapi mir_restapi_server --ros-args -p mir_hostname:='130.251.13.90' -p mir_restapi_auth:='Basic ZGlzdHJpYnV0b3I6NjJmMmYwZjFlZmYxMGQzMTUyYzk1ZjZmMDU5NjU3NmU0ODJiYjhlNDQ4MDY0MzNmNGNmOTI5NzkyODM0YjAxNA==' &
 MIR_PID=$!
 
 # Wait a few seconds to ensure the server is running
