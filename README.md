@@ -225,6 +225,22 @@ ros2 launch mir_manual_navigation manual_control_launch.py
 ros2 launch mir_navigation mir_mapping_launch.py
 ```
 
+On Mapping
+----------
+### How to map
+
+To save the created map, use the rviz plugin **"Save Map"** and **"Serialize
+Map"**. From time to time, segmentation faults or timeouts occur, so make sure
+your map is saved before shutting down the connection.
+
+
+### Refine existing map
+
+The given launch commands will create a fresh new map of the environment. If
+you like to adapt an existing map (must be serialized!) you can **deserialize
+it** using the rviz slam_toolbox plugin.
+
+
 # Navigation on MiR
 
 ### Option 1: Launching the modules separately
@@ -246,109 +262,14 @@ ros2 launch mir_navigation navigation.py use_sim_time:=false
 ### combined launch file:
 ros2 launch mir_navigation mir_nav_launch.py map:={path to /name of existing map}
 ```
-
-On Mapping
-----------
-
-As mentioned before, you can launch the differnet modules seperately or use the combined launch commands below:
-
-On **MiR**, run:
-
-```bash
-ros2 launch mir_navigation mir_mapping_launch.py
-```
-
-Both commands launch the simulation / driver and SLAM node.
-
-### How to map
-
-To save the created map, use the rviz plugin **"Save Map"** and **"Serialize
-Map"**. From time to time, segmentation faults or timeouts occur, so make sure
-your map is saved before shutting down the connection.
-
-![](doc/img/save_map.png)
-
-### Refine existing map
-
-The given launch commands will create a fresh new map of the environment. If
-you like to adapt an existing map (must be serialized!) you can **deserialize
-it** using the rviz slam_toolbox plugin.
-
-Select map to deserialize | and continue mapping
-:--------------:|:--------------:
-![](doc/img/deseralize_map1.png) | ![](doc/img/deseralize_map2.png)
-
-
-### Helpful launch arguments
-
-* **NAVIGATION**: Navigation is disabled per default. If you like to
-  teleoperate the robot using nav2, add:
-
-```text
-navigation_enabled:=true
-```
-
-Mapping.. | ..using nav2
-:--------------:|:--------------:
-![](doc/img/mapping1.png) | ![](doc/img/mapping2.png)
-
-
-On Localization and Navigation
-------------------------------
-
-As mentioned before, you can launch the differnet modules seperately or use the combined launch commands below:
-
-On **MiR**, run:
-
-```bash
-ros2 launch mir_navigation mir_nav_launch.py map:={path to existing map}
-```
-
-it launchs the driver and localization (amcl) using an existing map.
-
-### Helpful launch arguments
-
-* **MAP**: In Simulation, the map defaults to the maze map. On the real robot,
-  a map should be passed via  the ``map`` argument:
-
-```text
-map:= {path_to_map_yaml}
-world:={world_file} # simulation only: add respective world
-```
+it launchs the driver and localization (amcl) using an existing map.`
 
 ### Workflow
 
-Once the simulation / driver is running and rviz is started, you need to **set
+Once the driver is running and rviz is started, you need to **set
 the initial pose** on the map. This doesn't have to be accurate, just a
 reference, and amcl will do the refinement. To refine, **move the robot** around
 a little using the teleop window and the scan will eventually match the map.
-
-Initialize Pose | Drifted pose | Refined pose
-:--------------:|:--------------:|:--------------:
-![](doc/img/initial_pose1.png) |![](doc/img/initial_pose2.png)|![](doc/img/initial_pose3.png)
-
-
-Using a namespace
------------------
-
-When using a namespace for your robot, add the ``--ros-args -p namespace:=my_namespace`` to the launch files.
-The driver, description and gazebo packages work out of the box.
-However, to use the navigation stack the corresponding config.yaml files need to be adapted to match the renamed topic.
-
-The navigation ``cmd_vel`` topic is automatically remapped by adding the namespace in the ``navigation.py`` launch file.
-
-<!--
-
-Troubleshooting
----------------
-
-### Got a result when we were already in the DONE state
-
-Sometimes the move_base action will print the warning "Got a result when we
-were already in the DONE state". This is caused by a race condition between the
-`/move_base/result` and `/move_base/status` topics. When a status message with
-status `SUCCEEDED` arrives before the corresponding result message, this
-warning will be printed. It can be safely ignored. -->
 
 
 #########################################################################
