@@ -9,13 +9,10 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import (
     qos_profile_system_default,
-    qos_profile_sensor_data,
     QoSProfile,
     QoSDurabilityPolicy,
     QoSReliabilityPolicy,
-    QoSHistoryPolicy
 )
-from rclpy.clock import Clock
 
 import time
 import copy
@@ -43,11 +40,36 @@ import visualization_msgs.msg
 
 tf_prefix = ''
 
-qos_profile_latching = QoSProfile(
-    depth=1,
-    durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+qos_tf = QoSProfile(
+    depth=100,
+    durability=QoSDurabilityPolicy.VOLATILE,
+    reliability=QoSReliabilityPolicy.RELIABLE  
+)
+
+qos_tf_static = QoSProfile(
+    depth=10,
+    reliability=QoSReliabilityPolicy.RELIABLE,  
+    durability=QoSDurabilityPolicy.TRANSIENT_LOCAL  
+)
+
+qos_sensors = QoSProfile(
+    depth=10,
+    durability=QoSDurabilityPolicy.VOLATILE,
     reliability=QoSReliabilityPolicy.RELIABLE,
 )
+
+qos_commands = QoSProfile(
+    depth=1,
+    durability=QoSDurabilityPolicy.VOLATILE,
+    reliability=QoSReliabilityPolicy.RELIABLE,
+)
+
+qos_odometry = QoSProfile(
+    depth=10,
+    durability=QoSDurabilityPolicy.VOLATILE,
+    reliability=QoSReliabilityPolicy.RELIABLE,
+)
+
 
 class TimeFilter():
     def __init__(self):
@@ -340,22 +362,25 @@ def _remove_tf_prefix_dict_filter(msg_dict):
 #  service profiles.
 PUB_TOPICS = [
     #TopicConfig('camera_floor_left/floor', PointCloud2, dict_filter=_header_dict_filter), # WORKING
-    TopicConfig('camera_floor_left/obstacles', PointCloud2, dict_filter=_header_dict_filter), # WORKING
+    TopicConfig('camera_floor_left/obstacles', PointCloud2, dict_filter=_header_dict_filter, qos_profile=qos_sensors), # WORKING
     #TopicConfig('camera_floor_right/floor', PointCloud2, dict_filter=_header_dict_filter), # WORKING
-    TopicConfig('camera_floor_right/obstacles', PointCloud2, dict_filter=_header_dict_filter), # WORKING
-    TopicConfig('b_scan', LaserScan, dict_filter=_laser_scan_filter),
-    TopicConfig('f_scan', LaserScan, dict_filter=_laser_scan_filter),
-    TopicConfig('imu_data', Imu, dict_filter=_imu_dict_filter), # WORKING
-    TopicConfig('odom', Odometry, dict_filter=_odom_dict_filter), # WORKING
+    TopicConfig('camera_floor_right/obstacles', PointCloud2, dict_filter=_header_dict_filter, qos_profile=qos_sensors), # WORKING
+    TopicConfig('b_scan', LaserScan, dict_filter=_laser_scan_filter, qos_profile=qos_sensors), # WORKING
+    TopicConfig('f_scan', LaserScan, dict_filter=_laser_scan_filter, qos_profile=qos_sensors), # WORKING
+    TopicConfig('imu_data', Imu, dict_filter=_imu_dict_filter, qos_profile=qos_sensors), # WORKING
+    TopicConfig('MC/encoders', StampedEncoders, dict_filter=_header_dict_filter, qos_profile=qos_sensors), # WORKING
+
+    TopicConfig('odom', Odometry, dict_filter=_odom_dict_filter, qos_profile=qos_odometry), # WORKING
+
+    TopicConfig('tf', TFMessage, dict_filter=_tf_dict_filter, topic_renamed='/tf', qos_profile=qos_tf), # WORKING
+
+    TopicConfig('tf_static', TFMessage, dict_filter=_tf_dict_filter, topic_renamed='/tf_static_starter', qos_profile=qos_tf_static), # WORKING
+    
     #TopicConfig('robot_mode', RobotMode, dict_filter=_robot_mode_dict_filter), # WORKING
     #TopicConfig('robot_pose', Pose), # it is to respect /map frame
     #TopicConfig('robot_state', RobotState, dict_filter=_robot_state_dict_filter), # WORKING
-    TopicConfig('tf', TFMessage, dict_filter=_tf_dict_filter, topic_renamed='/tf'), # WORKING
-    TopicConfig('tf_static', TFMessage, dict_filter=_tf_dict_filter, topic_renamed='/tf_static_starter'), # WORKING 
-    TopicConfig('MC/encoders', StampedEncoders, dict_filter=_header_dict_filter), # WORKING
 
-    # TopicConfig('light_cmd', String), 
-
+    #TopicConfig('light_cmd', String), 
     #TopicConfig('PB/proximity', Proximity),
 
     # TopicConfig('initialpose', PoseWithCovarianceStamped, dict_filter=_initialpose_dict_filter), NOT WORK Qos problem
@@ -526,7 +551,7 @@ PUB_TOPICS = [
 
 # topics we want to subscribe to from ROS2 (and publish to the MiR)
 SUB_TOPICS = [
-    TopicConfig('cmd_vel', TwistStamped, 'cmd_vel_stamped'),
+    TopicConfig('cmd_vel', TwistStamped, 'cmd_vel_stamped', qos_profile=qos_commands),
     # TopicConfig('initialpose', geometry_msgs.msg.PoseWithCovarianceStamped),
     # TopicConfig('light_cmd', std_msgs.msg.String),
     # TopicConfig('mir_cmd', std_msgs.msg.String),
