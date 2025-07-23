@@ -1,0 +1,13 @@
+nodes:
+  1: {x: 1.0, y: 1.0, yaw: 0.0, style: "default", tolerance: 0.1}
+  2: {x: 3.0, y: 1.0, yaw: 0.0, style: "fast", tolerance: 0.2}
+  3: {x: 5.0, y: 2.0, yaw: 1.57, style: "cautious", tolerance: 0.15}
+  4: {x: 6.5, y: 4.0, yaw: 3.14, style: "default", tolerance: 0.1}
+  5: {x: 8.0, y: 6.0, yaw: 0.0, style: "slow", tolerance: 0.3}
+
+edges:
+  - {from: 1, to: 2, weight: 2.0}
+  - {from: 2, to: 3, weight: 2.2}
+  - {from: 3, to: 4, weight: 2.5}
+  - {from: 4, to: 5, weight: 2.0}
+  - {from: 2, to: 5, weight: 5.0}

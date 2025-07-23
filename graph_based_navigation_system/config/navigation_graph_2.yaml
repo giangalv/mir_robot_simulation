@@ -1,0 +1,44 @@
+edges:
+- from: 1
+  to: 0
+- from: 0
+  to: 2
+- from: 2
+  to: 3
+- from: 3
+  to: 4
+- from: 1
+  to: 4
+- from: 5
+  to: 4
+nodes:
+  0:
+    style: default
+    x: 0.86
+    y: 0.14
+    yaw: 0.0
+  1:
+    style: default
+    x: 2.26
+    y: 1.24
+    yaw: 1.581
+  2:
+    style: default
+    x: 3.01
+    y: 0.59
+    yaw: -2.333
+  3:
+    style: default
+    x: 2.16
+    y: -1.26
+    yaw: 1.026
+  4:
+    style: default
+    x: 4.56
+    y: -1.81
+    yaw: 3.003
+  5:
+    style: default
+    x: 6.51
+    y: -0.36
+    yaw: -2.464

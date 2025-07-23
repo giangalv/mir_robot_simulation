@@ -272,6 +272,60 @@ reference, and amcl will do the refinement. To refine, **move the robot** around
 a little using the teleop window and the scan will eventually match the map.
 
 
+# Graph-Based Navigation System for the MIR 
+
+## Graph Creation Tutorial
+
+After creating the base map using SLAM or mapping tools on the MiR (resulting in a .pgm or .png image and a .yaml metadata file), there is an intermediate step before actual robot navigation:
+
+### Step 1: Prepare the Map Files
+Locate the generated map files (typically in **~/mir_navigation/maps** )
+
+```text
+my_map.pgm
+my_map.yaml
+```
+
+Copy them to the graph system's map directory:
+```bash
+mkdir -p ~/src/graph_based_navigation_system/maps/
+cp ~/src/mir_navigation/maps/my_map.* ~/src/graph_based_navigation_system/maps/
+```
+
+### Step 2: Launch the Graph Editor
+```bash
+ros2 run graph_based_navigation_system graph_edit.py
+```
+
+You'll see:
+- The map dispayed in a new window
+- control instructions in the terminal
+
+### Step 3: Create Navigation Nodes
+1. **Add Nodes** (Left-click)
+2. **Set Orientations** (Shift+Drag):
+  - Click and hold a node
+  - While holdind Shift, drag to set the robot's orientation
+  - Release to confirm
+
+### Step 4: Connect Nodes with Edges
+1. **Create Edges** (Right-click)
+  - Right-click on first node 
+  - Right-click on second node
+
+### Step 5: Save the Grap
+Simply close the window to automatically save.
+
+### Step 6: Generate Visual Map
+```bash
+ros2 run graph_based_navigation_system render_graph_on_map.py
+```
+This creates:
+- **map_with_nodes_edges.png** - A visual map with nodes, edges, and orientations drawn over the original map. This is useful as a reference during development and can be loaded into RViz for visualization during navigation.
+- **map_with_nodes_edges.yaml** - A copy of the original map metadata file, updated to reference the new annotated image.
+
+Before starting navigation, you can customize the properties of each node in the graph to better reflect your navigation logic and environment.
+
 #########################################################################
 # Gazebo demo (mapping)
 
