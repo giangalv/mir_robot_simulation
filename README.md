@@ -299,7 +299,7 @@ ros2 run graph_based_navigation_system graph_edit.py
 
 You'll see:
 - The map dispayed in a new window
-- control instructions in the terminal
+- Control instructions in the terminal
 
 ### Step 3: Create Navigation Nodes
 1. **Add Nodes** (Left-click)
