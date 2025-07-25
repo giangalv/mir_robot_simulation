@@ -299,7 +299,7 @@ ros2 run graph_based_navigation_system graph_edit.py
 
 You'll see:
 - The map dispayed in a new window
-- Control instructions in the terminal
+- control instructions in the terminal
 
 ### Step 3: Create Navigation Nodes
 1. **Add Nodes** (Left-click)
@@ -325,6 +325,44 @@ This creates:
 - **map_with_nodes_edges.yaml** - A copy of the original map metadata file, updated to reference the new annotated image.
 
 Before starting navigation, you can customize the properties of each node in the graph to better reflect your navigation logic and environment.
+
+## MIR Navigation + Graph-Based Navigation
+This package provides launch files for running the **MIR navigation stack** (AMCL + Nav2 + manual navigation) along with a **graph-based navigation controller**.
+The system is split into two launch files for flexibility:
+
+- `grap_navigation_launch.py` - Launches the MIR driver, AMCL localization and Nav2 stack.
+- `graph_nav_controller_launch.py` - Launches the Graph Navigation Controller node separately.
+
+### Launch Files Overview
+
+1. **graph_navigation_launch.py**
+This file starts the main navigation system, including:
+
+* **MIR Driver** (`mir_driver` package)
+* **Manual Navigation Tools** (`mir_manual_navigation` package)
+* **AMCL Localization** (`amcl.py`)
+* **Nav2 Stack** (`navigation.py`)
+
+**Usage:**
+```bash
+ros2 launch graph_based_navigation_system graph_navigation_launch.py map:=path/to/map.yaml
+```
+
+**Arguments:**
+* `map` - Path to the map `.yaml` file (required).
+* `use_sim_time` - Set to `true` for simulation (defaul:`false`)
+
+2. **graph_nav_controller_launch.py**
+This file starts **only** the `graph_nav_controller` node, which controls navigation based on a graph of waypoints.
+
+**Usage:**
+```bash
+ros2 launch graph_based_navigation_system graph_nav_controller_launch.py
+```
+
+**Arguments:**
+* `use_sim_time` - Set to `true` for simulation (defaul:`false`)
+
 
 #########################################################################
 # Gazebo demo (mapping)

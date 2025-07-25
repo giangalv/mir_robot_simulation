@@ -1,7 +1,7 @@
 nodes:
-  1: {x: 1.0, y: 1.0, yaw: 0.0, style: "default", tolerance: 0.1}
-  2: {x: 3.0, y: 1.0, yaw: 0.0, style: "fast", tolerance: 0.2}
-  3: {x: 5.0, y: 2.0, yaw: 1.57, style: "cautious", tolerance: 0.15}
+  1: {x: 1.0, y: 1.0, yaw: 0.0, style: "default", tolerance: 0.1, planner: "dijkstra"}
+  2: {x: 3.0, y: 1.0, yaw: 0.0, style: "fast", tolerance: 0.2, planner: "astar"}
+  3: {x: 5.0, y: 2.0, yaw: 1.57, style: "cautious", tolerance: 0.15, planner: "bellman"}
   4: {x: 6.5, y: 4.0, yaw: 3.14, style: "default", tolerance: 0.1}
   5: {x: 8.0, y: 6.0, yaw: 0.0, style: "slow", tolerance: 0.3}
 
